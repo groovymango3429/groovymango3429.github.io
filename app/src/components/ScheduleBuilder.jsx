@@ -1,518 +1,554 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Users, AlertCircle, Plus, X, Download } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Clock, Calendar, AlertCircle, CheckCircle } from 'lucide-react';
 
-const ClassScheduler = () => {
-  const [courses, setCourses] = useState([]);
-  const [selectedCourses, setSelectedCourses] = useState([]);
-  const [linkedCourses, setLinkedCourses] = useState([]);
-  const [scheduleType, setScheduleType] = useState('balanced');
-  const [generatedSchedules, setGeneratedSchedules] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [termCode, setTermCode] = useState('202601');
-  const [apiUrl, setApiUrl] = useState('https://regssb.sis.clemson.edu/StudentRegistrationSsb/ssb/searchResults/searchResults');
+const ScheduleBuilder = () => {
+  const [selectedSections, setSelectedSections] = useState({
+    'ENGR1410': '',
+    'ENGR1411': '',
+    'ENGR2080': '',
+    'ENGR2081': '',
+    'MATH2080': '',
+    'PHYS1220': '',
+    'PHYS1240': '',
+    'ENGL2150': ''
+  });
 
-  const addCourse = (course) => {
-    if (!selectedCourses.find(c => c === course)) {
-      setSelectedCourses([...selectedCourses, course]);
-    }
+  // Parse time string to minutes since midnight
+  const timeToMinutes = (timeStr) => {
+    const [time, period] = timeStr.split(' ');
+    let [hours, minutes] = time.split(':').map(Number);
+    if (period === 'PM' && hours !== 12) hours += 12;
+    if (period === 'AM' && hours === 12) hours = 0;
+    return hours * 60 + minutes;
   };
 
-  const removeCourse = (course) => {
-    setSelectedCourses(selectedCourses.filter(c => c !== course));
-    setLinkedCourses(linkedCourses.filter(link => 
-      !link.courses.includes(course)
-    ));
+  // Class data structure
+  const classes = {
+    'ENGR1410': [
+      { section: '221', days: ['M', 'F'], time: '08:00 AM - 08:50 AM', location: 'Holtzendorff Hall 200' },
+      { section: '222', days: ['M', 'F'], time: '09:05 AM - 09:55 AM', location: 'Holtzendorff Hall 200' },
+      { section: '223', days: ['M', 'F'], time: '10:10 AM - 11:00 AM', location: 'Holtzendorff Hall 200' },
+      { section: '224', days: ['M', 'F'], time: '11:15 AM - 12:05 PM', location: 'Holtzendorff Hall 200' },
+      { section: '225', days: ['M', 'F'], time: '12:20 PM - 01:10 PM', location: 'Holtzendorff Hall 200' },
+      { section: '226', days: ['M', 'F'], time: '01:25 PM - 02:15 PM', location: 'Holtzendorff Hall 200' },
+      { section: '227', days: ['M', 'F'], time: '02:30 PM - 03:20 PM', location: 'Holtzendorff Hall 200' },
+      { section: '621', days: ['M', 'F'], time: '08:00 AM - 08:50 AM', location: 'Watt Innovation 106' },
+      { section: '622', days: ['M', 'F'], time: '09:05 AM - 09:55 AM', location: 'Watt Innovation 106' },
+      { section: '623', days: ['M', 'F'], time: '10:10 AM - 11:00 AM', location: 'Watt Innovation 106' },
+      { section: '624', days: ['M', 'F'], time: '11:15 AM - 12:05 PM', location: 'Watt Innovation 106' },
+      { section: '625', days: ['M', 'F'], time: '12:20 PM - 01:10 PM', location: 'Watt Innovation 106' },
+      { section: '626', days: ['M', 'F'], time: '01:25 PM - 02:15 PM', location: 'Watt Innovation 106' },
+      { section: '628', days: ['M', 'F'], time: '03:35 PM - 04:25 PM', location: 'Watt Innovation 106' },
+      { section: '821', days: ['M', 'F'], time: '08:00 AM - 08:50 AM', location: 'Watt Innovation 208' },
+      { section: '822', days: ['M', 'F'], time: '09:05 AM - 09:55 AM', location: 'Watt Innovation 208' },
+      { section: '823', days: ['M', 'F'], time: '10:10 AM - 11:00 AM', location: 'Watt Innovation 208' },
+      { section: '824', days: ['M', 'F'], time: '11:15 AM - 12:05 PM', location: 'Watt Innovation 208' },
+      { section: '825', days: ['M', 'F'], time: '12:20 PM - 01:10 PM', location: 'Watt Innovation 208' },
+      { section: '826', days: ['M', 'F'], time: '01:25 PM - 02:15 PM', location: 'Watt Innovation 208' },
+      { section: '827', days: ['M', 'F'], time: '02:30 PM - 03:20 PM', location: 'Watt Innovation 208' },
+    ],
+    'ENGR1411': [
+      { section: '221', days: ['W'], time: '08:00 AM - 09:55 AM', location: 'Holtzendorff Hall 200' },
+      { section: '222', days: ['T'], time: '12:30 PM - 02:25 PM', location: 'Holtzendorff Hall 200' },
+      { section: '223', days: ['W'], time: '10:10 AM - 12:05 PM', location: 'Holtzendorff Hall 200' },
+      { section: '224', days: ['R'], time: '12:30 PM - 02:25 PM', location: 'Holtzendorff Hall 200' },
+      { section: '225', days: ['W'], time: '12:20 PM - 02:15 PM', location: 'Holtzendorff Hall 200' },
+      { section: '226', days: ['T'], time: '02:45 PM - 04:35 PM', location: 'Holtzendorff Hall 200' },
+      { section: '227', days: ['W'], time: '02:30 PM - 04:25 PM', location: 'Holtzendorff Hall 200' },
+      { section: '621', days: ['W'], time: '08:00 AM - 09:55 AM', location: 'Watt Innovation 106' },
+      { section: '622', days: ['T'], time: '08:00 AM - 09:55 AM', location: 'Watt Innovation 106' },
+      { section: '623', days: ['W'], time: '10:10 AM - 12:05 PM', location: 'Watt Innovation 106' },
+      { section: '624', days: ['R'], time: '08:00 AM - 09:55 AM', location: 'Watt Innovation 106' },
+      { section: '625', days: ['W'], time: '12:20 PM - 02:15 PM', location: 'Watt Innovation 106' },
+      { section: '626', days: ['T'], time: '10:10 AM - 12:05 PM', location: 'Watt Innovation 106' },
+      { section: '628', days: ['R'], time: '10:10 AM - 12:05 PM', location: 'Watt Innovation 106' },
+      { section: '821', days: ['W'], time: '08:00 AM - 09:55 AM', location: 'Watt Innovation 208' },
+      { section: '822', days: ['T'], time: '08:00 AM - 09:55 AM', location: 'Watt Innovation 208' },
+      { section: '823', days: ['W'], time: '10:10 AM - 12:05 PM', location: 'Watt Innovation 208' },
+      { section: '824', days: ['R'], time: '08:00 AM - 09:55 AM', location: 'Watt Innovation 208' },
+      { section: '825', days: ['W'], time: '12:20 PM - 02:15 PM', location: 'Watt Innovation 208' },
+      { section: '826', days: ['T'], time: '10:10 AM - 12:05 PM', location: 'Watt Innovation 208' },
+      { section: '827', days: ['W'], time: '02:30 PM - 04:25 PM', location: 'Watt Innovation 208' },
+    ],
+    'ENGR2080': [
+      { section: '281', days: ['R'], time: '08:00 AM - 09:15 AM', location: 'Holtzendorff Hall 200' },
+      { section: '282', days: ['R'], time: '09:30 AM - 10:45 AM', location: 'Holtzendorff Hall 200' },
+      { section: '283', days: ['R'], time: '11:00 AM - 12:15 PM', location: 'Holtzendorff Hall 200' },
+      { section: '381', days: ['R'], time: '08:00 AM - 09:15 AM', location: 'Holtzendorff Hall B03' },
+      { section: '382', days: ['R'], time: '09:30 AM - 10:45 AM', location: 'Holtzendorff Hall B03' },
+      { section: '383', days: ['R'], time: '11:00 AM - 12:15 PM', location: 'Holtzendorff Hall B03' },
+      { section: '582', days: ['R'], time: '09:30 AM - 10:45 AM', location: 'Lowry Hall 15' },
+      { section: '583', days: ['R'], time: '11:00 AM - 12:15 PM', location: 'Lowry Hall 15' },
+      { section: '584', days: ['R'], time: '12:30 PM - 01:45 PM', location: 'Lowry Hall 15' },
+      { section: '684', days: ['R'], time: '12:30 PM - 01:45 PM', location: 'Watt Innovation 106' },
+      { section: '685', days: ['R'], time: '02:00 PM - 03:15 PM', location: 'Watt Innovation 106' },
+      { section: '686', days: ['R'], time: '03:30 PM - 04:45 PM', location: 'Watt Innovation 106' },
+      { section: '884', days: ['R'], time: '12:30 PM - 01:45 PM', location: 'Watt Innovation 208' },
+      { section: '885', days: ['R'], time: '02:00 PM - 03:15 PM', location: 'Watt Innovation 208' },
+      { section: '886', days: ['R'], time: '03:30 PM - 04:45 PM', location: 'Watt Innovation 208' },
+    ],
+    'ENGR2081': [
+      { section: '281', days: ['T'], time: '08:00 AM - 09:15 AM', location: 'Holtzendorff Hall 200' },
+      { section: '282', days: ['T'], time: '09:30 AM - 10:45 AM', location: 'Holtzendorff Hall 200' },
+      { section: '283', days: ['T'], time: '11:00 AM - 12:15 PM', location: 'Holtzendorff Hall 200' },
+      { section: '381', days: ['T'], time: '08:00 AM - 09:15 AM', location: 'Holtzendorff Hall B03' },
+      { section: '382', days: ['T'], time: '09:30 AM - 10:45 AM', location: 'Holtzendorff Hall B03' },
+      { section: '383', days: ['T'], time: '11:00 AM - 12:15 PM', location: 'Holtzendorff Hall B03' },
+      { section: '582', days: ['T'], time: '09:30 AM - 10:45 AM', location: 'Lowry Hall 15' },
+      { section: '583', days: ['T'], time: '11:00 AM - 12:15 PM', location: 'Lowry Hall 15' },
+      { section: '584', days: ['T'], time: '12:30 PM - 01:45 PM', location: 'Lowry Hall 15' },
+      { section: '684', days: ['T'], time: '12:30 PM - 01:45 PM', location: 'Watt Innovation 106' },
+      { section: '685', days: ['T'], time: '02:00 PM - 03:15 PM', location: 'Watt Innovation 106' },
+      { section: '686', days: ['T'], time: '03:30 PM - 04:45 PM', location: 'Watt Innovation 106' },
+      { section: '884', days: ['T'], time: '12:30 PM - 01:45 PM', location: 'Watt Innovation 208' },
+      { section: '885', days: ['T'], time: '02:00 PM - 03:15 PM', location: 'Watt Innovation 208' },
+      { section: '886', days: ['T'], time: '03:30 PM - 04:45 PM', location: 'Watt Innovation 208' },
+    ],
+    'MATH2080': [
+      { section: '001', days: ['M', 'W', 'F'], time: '09:05 AM - 09:55 AM', timeR: '09:30 AM - 10:20 AM', daysR: ['R'], location: 'Daniel Hall Exp 260' },
+      { section: '002', days: ['M', 'W', 'F'], time: '12:20 PM - 01:10 PM', timeR: '12:30 PM - 01:20 PM', daysR: ['R'], location: 'Martin Hall M1' },
+      { section: '003', days: ['M', 'W', 'F'], time: '08:00 AM - 08:50 AM', timeR: '08:00 AM - 08:50 AM', daysR: ['R'], location: 'Daniel Hall Exp 265' },
+      { section: '004', days: ['M', 'W'], time: '02:30 PM - 03:20 PM', timeR: '02:00 PM - 02:50 PM', daysR: ['T', 'R'], location: 'Martin Hall M1' },
+      { section: '005', days: ['M', 'W'], time: '03:35 PM - 04:25 PM', timeR: '03:30 PM - 04:20 PM', daysR: ['T', 'R'], location: 'Martin Hall M1' },
+      { section: '006', days: ['M', 'W', 'F'], time: '11:15 AM - 12:05 PM', timeR: '11:00 AM - 11:50 AM', daysR: ['R'], location: 'Martin Hall M1' },
+      { section: '007', days: ['M', 'W', 'F'], time: '10:10 AM - 11:00 AM', timeR: '09:30 AM - 10:20 AM', daysR: ['R'], location: 'Daniel Hall Exp 265' },
+      { section: '008', days: ['M', 'W', 'F'], time: '11:15 AM - 12:05 PM', timeR: '11:00 AM - 11:50 AM', daysR: ['R'], location: 'Daniel Hall Exp 265' },
+      { section: '009', days: ['M', 'W', 'F'], time: '08:00 AM - 08:50 AM', timeR: '08:00 AM - 08:50 AM', daysR: ['R'], location: 'Daniel Hall Exp 260' },
+      { section: '010', days: ['M', 'W', 'F'], time: '12:20 PM - 01:10 PM', timeR: '12:30 PM - 01:20 PM', daysR: ['R'], location: 'Daniel Hall Exp 260' },
+    ],
+    'PHYS1220': [
+      { section: '001', days: ['M', 'W', 'F'], time: '08:00 AM - 08:50 AM', location: 'Daniel Hall Exp G66' },
+      { section: '002', days: ['M', 'W', 'F'], time: '09:05 AM - 09:55 AM', location: 'Daniel Hall Exp G66' },
+      { section: '003', days: ['M', 'W', 'F'], time: '10:10 AM - 11:00 AM', location: 'Daniel Hall Exp G66' },
+      { section: '004', days: ['M', 'W', 'F'], time: '11:15 AM - 12:05 PM', location: 'Daniel Hall Exp G66' },
+      { section: '005', days: ['M', 'W', 'F'], time: '01:25 PM - 02:15 PM', location: 'Kinard Lab 223' },
+      { section: '006', days: ['M', 'W', 'F'], time: '01:25 PM - 02:15 PM', location: 'Kinard Lab 223' },
+    ],
+    'PHYS1240': [
+      { section: '001', days: ['M'], time: '12:20 PM - 02:10 PM', location: 'Kinard Lab 314' },
+      { section: '002', days: ['M'], time: '02:25 PM - 04:15 PM', location: 'Kinard Lab 314' },
+      { section: '005', days: ['T'], time: '08:00 AM - 09:50 AM', location: 'Kinard Lab 314' },
+      { section: '006', days: ['T'], time: '12:30 PM - 02:20 PM', location: 'Kinard Lab 314' },
+      { section: '007', days: ['T'], time: '02:35 PM - 04:25 PM', location: 'Kinard Lab 314' },
+      { section: '010', days: ['W'], time: '08:00 AM - 09:50 AM', location: 'Kinard Lab 314' },
+      { section: '011', days: ['W'], time: '12:20 PM - 02:10 PM', location: 'Kinard Lab 314' },
+      { section: '012', days: ['W'], time: '02:25 PM - 04:15 PM', location: 'Kinard Lab 314' },
+      { section: '015', days: ['R'], time: '08:00 AM - 09:50 AM', location: 'Kinard Lab 314' },
+      { section: '016', days: ['R'], time: '12:30 PM - 02:20 PM', location: 'Kinard Lab 314' },
+      { section: '017', days: ['F'], time: '12:20 PM - 02:10 PM', location: 'Kinard Lab 314' },
+      { section: '022', days: ['T'], time: '12:30 PM - 02:20 PM', location: 'Kinard Lab 316' },
+      { section: '026', days: ['W'], time: '12:20 PM - 02:10 PM', location: 'Kinard Lab 316' },
+      { section: '029', days: ['R'], time: '12:30 PM - 02:20 PM', location: 'Kinard Lab 316' },
+    ],
+    'ENGL2150': [
+      { section: '001', days: ['M', 'W', 'F'], time: '08:00 AM - 08:50 AM', location: 'Daniel Hall 206' },
+      { section: '002', days: ['M', 'W', 'F'], time: '09:05 AM - 09:55 AM', location: 'Daniel Hall 206' },
+      { section: '003', days: ['M', 'W', 'F'], time: '10:10 AM - 11:00 AM', location: 'Daniel Hall 218' },
+      { section: '004', days: ['M', 'W', 'F'], time: '11:15 AM - 12:05 PM', location: 'Daniel Hall 218' },
+      { section: '005', days: ['T', 'R'], time: '09:30 AM - 10:45 AM', location: 'Daniel Hall 223' },
+      { section: '006', days: ['T', 'R'], time: '11:00 AM - 12:15 PM', location: 'Daniel Hall 218' },
+      { section: '007', days: ['T', 'R'], time: '12:30 PM - 01:45 PM', location: 'Daniel Hall 218' },
+      { section: '008', days: ['T', 'R'], time: '02:00 PM - 03:15 PM', location: 'Daniel Hall 218' },
+      { section: '009', days: ['M', 'W', 'F'], time: '08:00 AM - 08:50 AM', location: 'Daniel Hall Exp 366' },
+      { section: '010', days: ['M', 'W', 'F'], time: '09:05 AM - 09:55 AM', location: 'Daniel Hall Exp 366' },
+    ],
   };
 
-  const addLinkedGroup = () => {
-    setLinkedCourses([...linkedCourses, { id: Date.now(), courses: [] }]);
-  };
+  // Check if two time slots conflict
+  const checkConflict = (class1, class2) => {
+    const commonDays = class1.days.filter(d => class2.days.includes(d));
+    if (commonDays.length === 0) return false;
 
-  const addCourseToLink = (linkId, course) => {
-    setLinkedCourses(linkedCourses.map(link => {
-      if (link.id === linkId) {
-        if (!link.courses.includes(course)) {
-          return { ...link, courses: [...link.courses, course] };
-        }
-      }
-      return link;
-    }));
-  };
-
-  const removeCourseFromLink = (linkId, course) => {
-    setLinkedCourses(linkedCourses.map(link => {
-      if (link.id === linkId) {
-        return { ...link, courses: link.courses.filter(c => c !== course) };
-      }
-      return link;
-    }));
-  };
-
-  const removeLinkedGroup = (linkId) => {
-    setLinkedCourses(linkedCourses.filter(link => link.id !== linkId));
-  };
-
-  const parseTime = (timeStr) => {
-    if (!timeStr) return 0;
-    const hour = parseInt(timeStr.substring(0, 2));
-    const min = parseInt(timeStr.substring(2, 4));
-    return hour * 60 + min;
-  };
-
-  const formatTime = (timeStr) => {
-    if (!timeStr) return '';
-    const hour = parseInt(timeStr.substring(0, 2));
-    const min = timeStr.substring(2, 4);
-    const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour);
-    return `${displayHour}:${min} ${ampm}`;
-  };
-
-  const getDaysString = (meeting) => {
-    if (!meeting) return '';
-    const days = [];
-    if (meeting.monday) days.push('M');
-    if (meeting.tuesday) days.push('T');
-    if (meeting.wednesday) days.push('W');
-    if (meeting.thursday) days.push('R');
-    if (meeting.friday) days.push('F');
-    return days.join('');
-  };
-
-  const hasTimeConflict = (section1, section2) => {
-    const meeting1 = section1.meetingsFaculty?.[0]?.meetingTime;
-    const meeting2 = section2.meetingsFaculty?.[0]?.meetingTime;
+    const time1 = class1.timeR || class1.time;
+    const time2 = class2.timeR || class2.time;
     
-    if (!meeting1 || !meeting2) return false;
-
-    const days1 = getDaysString(meeting1);
-    const days2 = getDaysString(meeting2);
-    
-    const hasCommonDay = days1.split('').some(d => days2.includes(d));
-    if (!hasCommonDay) return false;
-
-    const start1 = parseTime(meeting1.beginTime);
-    const end1 = parseTime(meeting1.endTime);
-    const start2 = parseTime(meeting2.beginTime);
-    const end2 = parseTime(meeting2.endTime);
+    const [start1, end1] = time1.split(' - ').map(timeToMinutes);
+    const [start2, end2] = time2.split(' - ').map(timeToMinutes);
 
     return !(end1 <= start2 || end2 <= start1);
   };
 
-  const scoreSchedule = (sections) => {
-    let score = 100;
-    const meetings = sections.map(s => s.meetingsFaculty?.[0]?.meetingTime).filter(Boolean);
+  // Check conflicts for Thursday time for MATH2080
+  const checkMathThursdayConflict = (mathSection, otherClass) => {
+    const mathData = classes['MATH2080'].find(c => c.section === mathSection);
+    if (!mathData || !mathData.daysR) return false;
     
-    if (meetings.length === 0) return 50;
+    const commonDays = mathData.daysR.filter(d => otherClass.days.includes(d));
+    if (commonDays.length === 0) return false;
 
-    const times = meetings.map(m => parseTime(m.beginTime));
-    const endTimes = meetings.map(m => parseTime(m.endTime));
-    
-    const earliestStart = Math.min(...times);
-    const latestEnd = Math.max(...endTimes);
-    const totalSpan = latestEnd - earliestStart;
+    const [start1, end1] = mathData.timeR.split(' - ').map(timeToMinutes);
+    const [start2, end2] = otherClass.time.split(' - ').map(timeToMinutes);
 
-    if (scheduleType === 'early') {
-      if (latestEnd > 840) score -= 20;
-      if (earliestStart > 540) score -= 10;
-    } else if (scheduleType === 'late') {
-      if (earliestStart < 600) score -= 20;
-      if (latestEnd < 900) score -= 10;
-    } else if (scheduleType === 'compact') {
-      const gapPenalty = (totalSpan - 300) / 30;
-      score -= Math.max(0, gapPenalty * 5);
-    }
-
-    for (let i = 0; i < meetings.length - 1; i++) {
-      const gap = parseTime(meetings[i + 1].beginTime) - parseTime(meetings[i].endTime);
-      if (gap < 15) score -= 10;
-      if (gap > 180) score -= 5;
-    }
-
-    const hasSeats = sections.every(s => s.seatsAvailable > 0);
-    if (!hasSeats) score -= 30;
-
-    return Math.max(0, Math.min(100, score));
+    return !(end1 <= start2 || end2 <= start1);
   };
 
-  const generateSchedules = async () => {
-    setLoading(true);
-    
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  const validateSchedule = () => {
+    const selected = Object.entries(selectedSections)
+      .filter(([_, section]) => section)
+      .map(([course, section]) => ({
+        course,
+        section,
+        data: classes[course].find(c => c.section === section)
+      }));
 
-    const mockSchedules = [];
-    
-    for (let i = 1; i <= 3; i++) {
-      const sections = selectedCourses.map((course, idx) => {
-        const parts = course.split(' ');
-        let startTime, endTime, days;
-        
-        if (scheduleType === 'early') {
-          startTime = idx % 2 === 0 ? '0800' : '0930';
-          endTime = idx % 2 === 0 ? '0915' : '1045';
-          days = { monday: true, wednesday: true, friday: true };
-        } else if (scheduleType === 'late') {
-          startTime = idx % 2 === 0 ? '1400' : '1530';
-          endTime = idx % 2 === 0 ? '1515' : '1645';
-          days = { tuesday: true, thursday: true };
-        } else if (scheduleType === 'mwf') {
-          startTime = ['0800', '0930', '1100', '1220'][idx % 4];
-          endTime = ['0915', '1045', '1215', '1335'][idx % 4];
-          days = { monday: true, wednesday: true, friday: true };
-        } else if (scheduleType === 'tr') {
-          startTime = ['0800', '0930', '1230', '1400'][idx % 4];
-          endTime = ['0915', '1045', '1345', '1515'][idx % 4];
-          days = { tuesday: true, thursday: true };
-        } else if (scheduleType === 'compact') {
-          startTime = ['0930', '1100', '1220', '1325'][idx % 4];
-          endTime = ['1045', '1215', '1335', '1440'][idx % 4];
-          days = idx % 2 === 0 
-            ? { monday: true, wednesday: true, friday: true }
-            : { tuesday: true, thursday: true };
-        } else {
-          startTime = ['0800', '0930', '1100', '1400'][idx % 4];
-          endTime = ['0915', '1045', '1215', '1515'][idx % 4];
-          days = idx % 2 === 0
-            ? { monday: true, wednesday: true, friday: true }
-            : { tuesday: true, thursday: true };
+    // Check ENGR pairs
+    if (selectedSections['ENGR1410'] && selectedSections['ENGR1411']) {
+      if (selectedSections['ENGR1410'] !== selectedSections['ENGR1411']) {
+        return { valid: false, message: 'ENGR 1410 and 1411 must have matching section numbers!' };
+      }
+    }
+
+    if (selectedSections['ENGR2080'] && selectedSections['ENGR2081']) {
+      if (selectedSections['ENGR2080'] !== selectedSections['ENGR2081']) {
+        return { valid: false, message: 'ENGR 2080 and 2081 must have matching section numbers!' };
+      }
+    }
+
+    // Check time conflicts
+    for (let i = 0; i < selected.length; i++) {
+      for (let j = i + 1; j < selected.length; j++) {
+        if (checkConflict(selected[i].data, selected[j].data)) {
+          return { 
+            valid: false, 
+            message: `Time conflict between ${selected[i].course} and ${selected[j].course}!` 
+          };
         }
+        
+        // Special check for MATH Thursday time
+        if (selected[i].course === 'MATH2080' && checkMathThursdayConflict(selected[i].section, selected[j].data)) {
+          return { 
+            valid: false, 
+            message: `Time conflict between MATH2080 (Thursday) and ${selected[j].course}!` 
+          };
+        }
+        if (selected[j].course === 'MATH2080' && checkMathThursdayConflict(selected[j].section, selected[i].data)) {
+          return { 
+            valid: false, 
+            message: `Time conflict between MATH2080 (Thursday) and ${selected[i].course}!` 
+          };
+        }
+      }
+    }
 
-        return {
-          courseReferenceNumber: `${10000 + i * 100 + idx}`,
-          subject: parts[0] || 'SUBJ',
-          courseNumber: parts[1] || '0000',
-          sequenceNumber: linkedCourses.some(link => link.courses.includes(course))
-            ? '001'
-            : `00${(idx + i) % 9 + 1}`,
-          courseTitle: `${course} - Introduction`,
-          meetingsFaculty: [{
-            meetingTime: {
-              beginTime: startTime,
-              endTime: endTime,
-              ...days,
-              building: ['POWERS', 'LEE', 'COOPER', 'DANIEL'][idx % 4],
-              room: `${100 + idx * 10 + i}`
+    return { valid: true, message: 'Schedule is valid!' };
+  };
+
+  const getScheduleEndTime = () => {
+    const selected = Object.entries(selectedSections)
+      .filter(([_, section]) => section)
+      .map(([course, section]) => classes[course].find(c => c.section === section));
+
+    if (selected.length === 0) return null;
+
+    let latestEnd = 0;
+    selected.forEach(classData => {
+      const times = [classData.time];
+      if (classData.timeR) times.push(classData.timeR);
+      
+      times.forEach(time => {
+        const endTime = timeToMinutes(time.split(' - ')[1]);
+        if (endTime > latestEnd) latestEnd = endTime;
+      });
+    });
+
+    const hours = Math.floor(latestEnd / 60);
+    const minutes = latestEnd % 60;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours > 12 ? hours - 12 : hours;
+    return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+  };
+
+  const validation = validateSchedule();
+  const endTime = getScheduleEndTime();
+
+  // Find multiple optimal schedules
+  const findOptimalSchedules = () => {
+    const validSchedules = [];
+
+    // Get all ENGR 1410 sections
+    for (const engr1410 of classes['ENGR1410']) {
+      const engr1411 = classes['ENGR1411'].find(c => c.section === engr1410.section);
+      if (!engr1411) continue;
+
+      // Get all ENGR 2080 sections
+      for (const engr2080 of classes['ENGR2080']) {
+        const engr2081 = classes['ENGR2081'].find(c => c.section === engr2080.section);
+        if (!engr2081) continue;
+
+        // Try all MATH sections
+        for (const math of classes['MATH2080']) {
+          // Try all PHYS 1220 sections
+          for (const phys1220 of classes['PHYS1220']) {
+            // Try all PHYS 1240 sections
+            for (const phys1240 of classes['PHYS1240']) {
+              // Try all ENGL sections
+              for (const engl of classes['ENGL2150']) {
+                const schedule = [
+                  { course: 'ENGR1410', ...engr1410 },
+                  { course: 'ENGR1411', ...engr1411 },
+                  { course: 'ENGR2080', ...engr2080 },
+                  { course: 'ENGR2081', ...engr2081 },
+                  { course: 'MATH2080', ...math },
+                  { course: 'PHYS1220', ...phys1220 },
+                  { course: 'PHYS1240', ...phys1240 },
+                  { course: 'ENGL2150', ...engl }
+                ];
+
+                // Check for conflicts
+                let hasConflict = false;
+                for (let i = 0; i < schedule.length && !hasConflict; i++) {
+                  for (let j = i + 1; j < schedule.length; j++) {
+                    if (checkConflict(schedule[i], schedule[j])) {
+                      hasConflict = true;
+                      break;
+                    }
+                    if (schedule[i].course === 'MATH2080' && checkMathThursdayConflict(schedule[i].section, schedule[j])) {
+                      hasConflict = true;
+                      break;
+                    }
+                    if (schedule[j].course === 'MATH2080' && checkMathThursdayConflict(schedule[j].section, schedule[i])) {
+                      hasConflict = true;
+                      break;
+                    }
+                  }
+                }
+
+                if (!hasConflict) {
+                  // Check if starts at 8 AM
+                  const startsAt8 = schedule.some(c => {
+                    const time = c.time || c.timeR;
+                    const startTime = timeToMinutes(time.split(' - ')[0]);
+                    return startTime === 480; // 8 AM
+                  });
+
+                  if (startsAt8) {
+                    // Calculate end times by day
+                    const dayEndTimes = { M: 0, T: 0, W: 0, R: 0, F: 0 };
+                    let latestEnd = 0;
+                    
+                    schedule.forEach(classData => {
+                      const times = [{ time: classData.time, days: classData.days }];
+                      if (classData.timeR && classData.daysR) {
+                        times.push({ time: classData.timeR, days: classData.daysR });
+                      }
+                      
+                      times.forEach(({ time, days }) => {
+                        const endTime = timeToMinutes(time.split(' - ')[1]);
+                        if (endTime > latestEnd) latestEnd = endTime;
+                        
+                        days.forEach(day => {
+                          if (endTime > dayEndTimes[day]) {
+                            dayEndTimes[day] = endTime;
+                          }
+                        });
+                      });
+                    });
+
+                    // Calculate variation in end times
+                    const endTimeValues = Object.values(dayEndTimes).filter(t => t > 0);
+                    const avgEndTime = endTimeValues.reduce((a, b) => a + b, 0) / endTimeValues.length;
+                    const variation = Math.max(...endTimeValues) - Math.min(...endTimeValues);
+
+                    validSchedules.push({
+                      schedule,
+                      latestEnd,
+                      dayEndTimes,
+                      avgEndTime,
+                      variation
+                    });
+                  }
+                }
+              }
             }
-          }],
-          faculty: [{ displayName: ['Dr. Smith', 'Dr. Johnson', 'Dr. Williams', 'Dr. Brown'][idx % 4] }],
-          seatsAvailable: Math.max(0, 30 - i * 5 - idx * 2)
-        };
+          }
+        }
+      }
+    }
+
+    // Sort and pick diverse options
+    validSchedules.sort((a, b) => a.latestEnd - b.latestEnd);
+    
+    const options = [];
+    if (validSchedules.length > 0) {
+      // Option 1: Absolute earliest finish
+      options.push({
+        name: "Earliest Finish Overall",
+        description: "Ends as early as possible every day",
+        ...validSchedules[0]
       });
 
-      const schedule = { id: i, sections };
-      schedule.score = scoreSchedule(sections);
-      mockSchedules.push(schedule);
+      // Option 2: Most balanced (moderate variation)
+      const balanced = validSchedules.filter(s => s.variation > 60 && s.variation < 180)
+        .sort((a, b) => a.avgEndTime - b.avgEndTime)[0];
+      if (balanced && balanced !== validSchedules[0]) {
+        options.push({
+          name: "Balanced Schedule",
+          description: "Some days end earlier, some later - more balanced",
+          ...balanced
+        });
+      }
+
+      // Option 3: Most variation (one or two early days)
+      const varied = [...validSchedules]
+        .sort((a, b) => b.variation - a.variation)
+        .find(s => s.avgEndTime < validSchedules[0].avgEndTime + 120);
+      if (varied && !options.includes(varied)) {
+        options.push({
+          name: "Early Days Available",
+          description: "Some days end much earlier than others",
+          ...varied
+        });
+      }
     }
 
-    mockSchedules.sort((a, b) => b.score - a.score);
-
-    setGeneratedSchedules(mockSchedules);
-    setLoading(false);
+    return options.slice(0, 3);
   };
 
-  const exportSchedule = (schedule) => {
-    const text = schedule.sections.map(s => {
-      const meeting = s.meetingsFaculty?.[0]?.meetingTime;
-      return `${s.subject} ${s.courseNumber}-${s.sequenceNumber}\n` +
-             `${s.courseTitle}\n` +
-             `${formatTime(meeting?.beginTime)} - ${formatTime(meeting?.endTime)}\n` +
-             `${getDaysString(meeting)}\n` +
-             `${meeting?.building} ${meeting?.room}\n` +
-             `CRN: ${s.courseReferenceNumber}\n\n`;
-    }).join('---\n');
+  const [optimalSchedules] = useState(() => findOptimalSchedules());
+  const [selectedOption, setSelectedOption] = useState(0);
 
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `schedule-${schedule.id}.txt`;
-    a.click();
-  };
-
-  const getScheduleTypeInfo = (type) => {
-    switch(type) {
-      case 'early':
-        return { label: 'Early Bird', desc: 'Classes end by early afternoon', icon: '🌅' };
-      case 'late':
-        return { label: 'Night Owl', desc: 'Classes start later in the day', icon: '🌙' };
-      case 'compact':
-        return { label: 'Compact', desc: 'Minimize gaps between classes', icon: '⚡' };
-      case 'mwf':
-        return { label: 'MWF Focus', desc: 'Prefer Monday/Wednesday/Friday', icon: '📅' };
-      case 'tr':
-        return { label: 'T/R Focus', desc: 'Prefer Tuesday/Thursday', icon: '📆' };
-      default:
-        return { label: 'Balanced', desc: 'Even distribution throughout day', icon: '⚖️' };
+  const loadOptimalSchedule = (optionIndex) => {
+    if (optimalSchedules[optionIndex]) {
+      const newSections = {};
+      optimalSchedules[optionIndex].schedule.forEach(c => {
+        newSections[c.course] = c.section;
+      });
+      setSelectedSections(newSections);
+      setSelectedOption(optionIndex);
     }
+  };
+
+  const formatTime = (minutes) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours);
+    return `${displayHours}:${mins.toString().padStart(2, '0')} ${period}`;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-purple-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        <div className="bg-white rounded-lg shadow-xl p-6 mb-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-orange-600 mb-2">
-                Clemson Class Scheduler
-              </h1>
-              <p className="text-gray-600">Find your perfect class schedule</p>
-            </div>
-            <div className="text-right">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Term
-              </label>
-              <select 
-                value={termCode}
-                onChange={(e) => setTermCode(e.target.value)}
-                className="border border-gray-300 rounded-lg px-4 py-2"
-              >
-                <option value="202601">Spring 2026</option>
-                <option value="202508">Fall 2025</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Add Courses
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="e.g., ENGR 1410, CPSC 1010, MATH 1060"
-                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && searchTerm.trim()) {
-                    addCourse(searchTerm.trim().toUpperCase());
-                    setSearchTerm('');
-                  }
-                }}
-              />
-              <button
-                onClick={() => {
-                  if (searchTerm.trim()) {
-                    addCourse(searchTerm.trim().toUpperCase());
-                    setSearchTerm('');
-                  }
-                }}
-                className="bg-orange-600 text-white px-6 py-2 rounded-lg hover:bg-orange-700 flex items-center gap-2"
-              >
-                <Plus size={20} />
-                Add
-              </button>
-            </div>
-          </div>
-
-          {selectedCourses.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Selected Courses</h3>
-              <div className="flex flex-wrap gap-2">
-                {selectedCourses.map((course, idx) => (
-                  <div key={idx} className="bg-orange-100 text-orange-800 px-4 py-2 rounded-full flex items-center gap-2">
-                    <span className="font-medium">{course}</span>
-                    <button
-                      onClick={() => removeCourse(course)}
-                      className="hover:bg-orange-200 rounded-full p-1"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="text-lg font-semibold text-gray-800">Linked Courses</h3>
-                <p className="text-sm text-gray-600">Courses that must have matching section numbers</p>
-              </div>
-              <button
-                onClick={addLinkedGroup}
-                disabled={selectedCourses.length < 2}
-                className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <span className="text-lg">🔗</span>
-                Add Link Group
-              </button>
-            </div>
-
-            {linkedCourses.map((link) => (
-              <div key={link.id} className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4 mb-3">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-purple-700 font-medium">
-                    <span className="text-lg">🔗</span>
-                    <span>Must have same section number</span>
-                  </div>
-                  <button
-                    onClick={() => removeLinkedGroup(link.id)}
-                    className="text-red-600 hover:bg-red-100 rounded-full p-1"
-                  >
-                    <X size={18} />
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {link.courses.map((course, idx) => (
-                    <div key={idx} className="bg-white text-purple-800 px-3 py-1 rounded-full flex items-center gap-2 text-sm">
-                      <span>{course}</span>
-                      <button
-                        onClick={() => removeCourseFromLink(link.id, course)}
-                        className="hover:bg-purple-100 rounded-full p-0.5"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                <select
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      addCourseToLink(link.id, e.target.value);
-                      e.target.value = '';
-                    }
-                  }}
-                  className="w-full border border-purple-300 rounded-lg px-3 py-2 text-sm"
-                >
-                  <option value="">+ Add course to this link group</option>
-                  {selectedCourses
-                    .filter(c => !link.courses.includes(c))
-                    .map((course, idx) => (
-                      <option key={idx} value={course}>{course}</option>
-                    ))}
-                </select>
-              </div>
-            ))}
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">
-              Schedule Preference
-            </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {['balanced', 'early', 'late', 'compact', 'mwf', 'tr'].map((type) => {
-                const info = getScheduleTypeInfo(type);
-                return (
-                  <button
-                    key={type}
-                    onClick={() => setScheduleType(type)}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      scheduleType === type
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <div className="text-2xl mb-2">{info.icon}</div>
-                    <div className="font-semibold text-gray-800">{info.label}</div>
-                    <div className="text-xs text-gray-600 mt-1">{info.desc}</div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <button
-            onClick={generateSchedules}
-            disabled={selectedCourses.length === 0 || loading}
-            className="w-full bg-gradient-to-r from-orange-600 to-purple-600 text-white py-4 rounded-lg font-semibold text-lg hover:from-orange-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                Generating Schedules...
-              </>
-            ) : (
-              <>
-                <Calendar size={24} />
-                Generate Schedules
-              </>
-            )}
-          </button>
+    <div className="w-full max-w-6xl mx-auto p-6 bg-gradient-to-br from-orange-50 to-purple-50">
+      <div className="bg-white rounded-lg shadow-lg p-6">
+        <div className="flex items-center gap-3 mb-6">
+          <Calendar className="text-orange-600" size={32} />
+          <h1 className="text-3xl font-bold text-gray-800">Spring 2026 Schedule Builder</h1>
         </div>
 
-        {generatedSchedules.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-gray-800">Generated Schedules</h2>
-            {generatedSchedules.map((schedule) => (
-              <div key={schedule.id} className="bg-white rounded-lg shadow-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`px-4 py-2 rounded-full font-semibold ${
-                      schedule.score >= 80 ? 'bg-green-100 text-green-800' :
-                      schedule.score >= 60 ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
-                      Score: {Math.round(schedule.score)}%
+        {optimalSchedules.length > 0 && (
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">📅 Recommended Schedule Options</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {optimalSchedules.map((option, idx) => (
+                <div
+                  key={idx}
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    selectedOption === idx
+                      ? 'border-orange-500 bg-orange-50'
+                      : 'border-gray-300 bg-white hover:border-orange-300'
+                  }`}
+                  onClick={() => loadOptimalSchedule(idx)}
+                >
+                  <h3 className="font-bold text-gray-800 mb-2">{option.name}</h3>
+                  <p className="text-sm text-gray-600 mb-3">{option.description}</p>
+                  <div className="text-xs space-y-1">
+                    <div className="font-semibold text-gray-700">Daily End Times:</div>
+                    {Object.entries(option.dayEndTimes)
+                      .filter(([_, time]) => time > 0)
+                      .sort((a, b) => a[1] - b[1])
+                      .map(([day, time]) => (
+                        <div key={day} className="flex justify-between">
+                          <span className="text-gray-600">{day === 'M' ? 'Mon' : day === 'T' ? 'Tue' : day === 'W' ? 'Wed' : day === 'R' ? 'Thu' : 'Fri'}:</span>
+                          <span className="font-mono text-gray-800">{formatTime(time)}</span>
+                        </div>
+                      ))}
+                    <div className="mt-2 pt-2 border-t border-gray-300">
+                      <div className="flex justify-between font-semibold">
+                        <span className="text-gray-700">Latest End:</span>
+                        <span className="text-orange-600">{formatTime(option.latestEnd)}</span>
+                      </div>
                     </div>
-                    <span className="text-gray-600">Schedule Option {schedule.id}</span>
                   </div>
                   <button
-                    onClick={() => exportSchedule(schedule)}
-                    className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      loadOptimalSchedule(idx);
+                    }}
+                    className="mt-3 w-full px-3 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 text-sm font-semibold"
                   >
-                    <Download size={18} />
-                    Export
+                    Load This Schedule
                   </button>
                 </div>
-
-                <div className="grid gap-4">
-                  {schedule.sections.map((section, idx) => {
-                    const meeting = section.meetingsFaculty?.[0]?.meetingTime;
-                    return (
-                      <div key={idx} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2 flex-wrap">
-                              <h3 className="text-lg font-semibold text-gray-800">
-                                {section.subject} {section.courseNumber}-{section.sequenceNumber}
-                              </h3>
-                              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                                CRN: {section.courseReferenceNumber}
-                              </span>
-                            </div>
-                            <p className="text-gray-600 mb-3">{section.courseTitle}</p>
-                            
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                              <div className="flex items-center gap-2 text-gray-700">
-                                <Clock size={16} className="text-orange-600 flex-shrink-0" />
-                                <span>{formatTime(meeting?.beginTime)} - {formatTime(meeting?.endTime)}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-gray-700">
-                                <Calendar size={16} className="text-purple-600 flex-shrink-0" />
-                                <span>{getDaysString(meeting)}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-gray-700">
-                                <Users size={16} className={`flex-shrink-0 ${section.seatsAvailable > 10 ? 'text-green-600' : section.seatsAvailable > 0 ? 'text-yellow-600' : 'text-red-600'}`} />
-                                <span>{section.seatsAvailable} seats available</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-gray-700">
-                                <span>📍</span>
-                                <span>{meeting?.building} {meeting?.room}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-gray-700 col-span-full">
-                                <span>👨‍🏫</span>
-                                <span>{section.faculty?.[0]?.displayName}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
-        {generatedSchedules.length === 0 && !loading && selectedCourses.length > 0 && (
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 text-center">
-            <AlertCircle size={48} className="text-blue-600 mx-auto mb-3" />
-            <h3 className="text-lg font-semibold text-blue-900 mb-2">Ready to Generate</h3>
-            <p className="text-blue-700">Click "Generate Schedules" to find your optimal class schedule!</p>
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-800">
+            <strong>Instructions:</strong> Choose one of the recommended options above, or manually select sections below. ENGR 1410/1411 and ENGR 2080/2081 must have matching section numbers.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          {Object.keys(classes).map(course => (
+            <div key={course} className="bg-gray-50 p-4 rounded-lg">
+              <label className="block font-semibold text-gray-700 mb-2">
+                {course.replace(/(\d)/, ' $1')}
+              </label>
+              <select
+                value={selectedSections[course]}
+                onChange={(e) => setSelectedSections({...selectedSections, [course]: e.target.value})}
+                className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              >
+                <option value="">Select a section...</option>
+                {classes[course].map(section => (
+                  <option key={section.section} value={section.section}>
+                    Section {section.section} - {section.days.join('')} {section.time}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+
+        <div className={`p-4 rounded-lg mb-6 ${validation.valid ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+          <div className="flex items-center gap-2">
+            {validation.valid ? 
+              <CheckCircle className="text-green-600" size={20} /> : 
+              <AlertCircle className="text-red-600" size={20} />
+            }
+            <span className={validation.valid ? 'text-green-800' : 'text-red-800'}>
+              {validation.message}
+            </span>
+          </div>
+          {endTime && validation.valid && (
+            <div className="mt-2 flex items-center gap-2 text-gray-700">
+              <Clock size={16} />
+              <span>Latest class ends at: <strong>{endTime}</strong></span>
+            </div>
+          )}
+        </div>
+
+        {validation.valid && Object.values(selectedSections).some(s => s) && (
+          <div className="bg-white border-2 border-orange-200 rounded-lg p-4">
+            <h3 className="font-bold text-lg mb-3 text-gray-800">Your Schedule:</h3>
+            <div className="space-y-2">
+              {Object.entries(selectedSections)
+                .filter(([_, section]) => section)
+                .map(([course, section]) => {
+                  const classData = classes[course].find(c => c.section === section);
+                  return (
+                    <div key={course} className="p-3 bg-orange-50 rounded border border-orange-200">
+                      <div className="font-semibold text-gray-800">{course.replace(/(\d)/, ' $1')} - Section {section}</div>
+                      <div className="text-sm text-gray-600">
+                        {classData.days.join('')} {classData.time}
+                        {classData.timeR && ` | ${classData.daysR.join('')} ${classData.timeR}`}
+                      </div>
+                      <div className="text-xs text-gray-500">{classData.location}</div>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         )}
       </div>
@@ -520,4 +556,4 @@ const ClassScheduler = () => {
   );
 };
 
-export default ClassScheduler;
+export default ScheduleBuilder;
