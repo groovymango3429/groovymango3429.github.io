@@ -264,6 +264,37 @@
             color: #f56600;
             margin-right: 0.5rem;
         }
+        .dev-notice {
+            position: fixed;
+            bottom: 1rem;
+            left: 1rem;
+            background: rgba(255, 247, 237, 0.98);
+            color: #92400e;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid #f59e0b;
+            z-index: 999;
+            max-width: 350px;
+            border-radius: 0 4px 4px 0;
+        }
+        .dev-notice i {
+            color: #f59e0b;
+            margin-right: 0.5rem;
+        }
+        .dev-notice strong {
+            color: #78350f;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+        .dev-notice a {
+            color: #f56600;
+            text-decoration: none;
+            font-weight: 600;
+        }
+        .dev-notice a:hover {
+            text-decoration: underline;
+        }
         @media (max-width: 768px) {
             .main-card { padding: 1.5rem; }
             h1 { font-size: 1.5rem; }
@@ -272,10 +303,14 @@
             .input-group { flex-direction: column; }
             .section-header { flex-direction: column; align-items: flex-start; }
             .schedule-header { flex-direction: column; align-items: flex-start; }
-            .credit {
+            .credit, .dev-notice {
                 position: static;
-                margin-top: 2rem;
+                margin: 1rem auto;
                 text-align: center;
+                max-width: 100%;
+            }
+            .dev-notice {
+                margin-bottom: 0.5rem;
             }
         }
     </style>
@@ -390,9 +425,21 @@
             <p>Click "Generate Schedules" to find your optimal class schedule!</p>
         </div>
     </div>
+    
+    <div class="dev-notice">
+        <div>
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>⚠️ Beta Version</strong>
+        </div>
+        <div>
+            Site is still in development. Found a bug? Email: <a href="mailto:pwrigh3@clemson.edu">pwrigh3@clemson.edu</a>
+        </div>
+    </div>
+    
     <div class="credit">
         <i class="fas fa-code"></i> Created by Patty and Tris
     </div>
+    
     <div id="loadingOverlay" class="loading-overlay hidden">
         <div class="spinner"></div>
         <p>Generating Schedules...</p>
