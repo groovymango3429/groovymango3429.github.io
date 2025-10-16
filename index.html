@@ -530,8 +530,7 @@
                 const courseNumber = parts[1];
                 const sections = allCoursesData.filter(course =>
                     course.subject === subject &&
-                    course.courseNumber === courseNumber &&
-                    course.seatsAvailable > 0
+                    course.courseNumber === courseNumber
                 );
                 if (sections.length === 0) {
                     alert(`No available sections found for ${courseCode}`);
