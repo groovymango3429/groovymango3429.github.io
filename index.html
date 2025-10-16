@@ -309,7 +309,6 @@
     const loadingOverlay = document.getElementById('loadingOverlay');
     async function loadCoursesData() {
         try {
-            // Use the static file in your repo for reliability
             const response = await fetch('course_schedule_2026.json');
             if (!response.ok) throw new Error('Failed to fetch courses');
             const data = await response.json();
@@ -708,7 +707,6 @@
     window.removeCourseFromLink = removeCourseFromLink;
     window.handleLinkSelect = handleLinkSelect;
     window.exportSchedule = exportSchedule;
-    </invoke>
     </script>
 </body>
 </html>
