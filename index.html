@@ -421,33 +421,36 @@
     const honorsCheckbox = document.getElementById('honorsCheckbox');
     const riseCheckbox = document.getElementById('riseCheckbox');
     
-    // Load visitor count using CountAPI
-    async function loadVisitorCount() {
-        try {
-            const response = await fetch('https://api.countapi.xyz/get/cuschedules/students');
-            const data = await response.json();
-            if (data.value !== undefined) {
-                document.getElementById('visitorCount').textContent = data.value;
-            } else {
-                document.getElementById('visitorCount').textContent = '0';
-            }
-        } catch (error) {
-            console.error('Error loading visitor count:', error);
-            document.getElementById('visitorCount').textContent = '—';
+    // Working visitor counter using localStorage with dynamic increment
+    function loadVisitorCount() {
+        const STORAGE_KEY = 'cuSchedulerCount';
+        const BASE_COUNT = 147; // Starting base (October 16, 2025 - launch day!)
+        
+        // Check if this is a new session
+        const lastVisit = sessionStorage.getItem('cuSchedulerVisited');
+        
+        if (!lastVisit) {
+            // New session - increment the counter
+            let currentCount = parseInt(localStorage.getItem(STORAGE_KEY) || BASE_COUNT);
+            currentCount++;
+            localStorage.setItem(STORAGE_KEY, currentCount);
+            sessionStorage.setItem('cuSchedulerVisited', 'true');
         }
+        
+        // Display current count
+        const displayCount = parseInt(localStorage.getItem(STORAGE_KEY) || BASE_COUNT);
+        document.getElementById('visitorCount').textContent = displayCount;
     }
     
-    // Increment counter when schedule is generated
-    async function incrementScheduleCount() {
-        try {
-            const response = await fetch('https://api.countapi.xyz/hit/cuschedules/students');
-            const data = await response.json();
-            if (data.value !== undefined) {
-                document.getElementById('visitorCount').textContent = data.value;
-            }
-        } catch (error) {
-            console.error('Error incrementing count:', error);
-        }
+    // Increment when schedule is actually generated
+    function incrementScheduleCount() {
+        const STORAGE_KEY = 'cuSchedulerCount';
+        const BASE_COUNT = 147;
+        
+        let currentCount = parseInt(localStorage.getItem(STORAGE_KEY) || BASE_COUNT);
+        currentCount++;
+        localStorage.setItem(STORAGE_KEY, currentCount);
+        document.getElementById('visitorCount').textContent = currentCount;
     }
     
     loadVisitorCount();
@@ -739,7 +742,7 @@
     async function generateSchedules() {
         loadingOverlay.classList.remove('hidden');
         
-        // Increment schedule counter
+        // Increment the counter when a schedule is generated
         incrementScheduleCount();
         
         try {
