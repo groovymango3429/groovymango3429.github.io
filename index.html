@@ -421,22 +421,33 @@
     const honorsCheckbox = document.getElementById('honorsCheckbox');
     const riseCheckbox = document.getElementById('riseCheckbox');
     
-    // Load visitor count
+    // Load visitor count using CountAPI
     async function loadVisitorCount() {
         try {
-            const response = await fetch('https://api.countapi.xyz/hit/cuschedules.me/visits');
+            const response = await fetch('https://api.countapi.xyz/get/cuschedules/students');
             const data = await response.json();
-            document.getElementById('visitorCount').textContent = data.value || '0';
+            if (data.value !== undefined) {
+                document.getElementById('visitorCount').textContent = data.value;
+            } else {
+                document.getElementById('visitorCount').textContent = '0';
+            }
         } catch (error) {
             console.error('Error loading visitor count:', error);
             document.getElementById('visitorCount').textContent = '—';
         }
     }
     
-    // Increment visitor count when schedule is generated
-    function incrementScheduleCount() {
-        fetch('https://api.countapi.xyz/hit/cuschedules.me/schedules')
-            .catch(err => console.error('Error incrementing schedule count:', err));
+    // Increment counter when schedule is generated
+    async function incrementScheduleCount() {
+        try {
+            const response = await fetch('https://api.countapi.xyz/hit/cuschedules/students');
+            const data = await response.json();
+            if (data.value !== undefined) {
+                document.getElementById('visitorCount').textContent = data.value;
+            }
+        } catch (error) {
+            console.error('Error incrementing count:', error);
+        }
     }
     
     loadVisitorCount();
@@ -728,7 +739,7 @@
     async function generateSchedules() {
         loadingOverlay.classList.remove('hidden');
         
-        // Increment schedule generation counter
+        // Increment schedule counter
         incrementScheduleCount();
         
         try {
