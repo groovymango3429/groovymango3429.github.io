@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Clemson Class Scheduler</title>
+    
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8HVXCYQ4RL"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8HVXCYQ4RL');
+    </script>
+    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -792,6 +802,15 @@
         // Increment the counter when a schedule is generated
         incrementScheduleCount();
         
+        // Track schedule generation in Google Analytics
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'generate_schedule', {
+                'event_category': 'engagement',
+                'event_label': 'Schedule Generated',
+                'value': selectedCourses.length
+            });
+        }
+        
         try {
             const courseSections = {};
             for (const courseCode of selectedCourses) {
@@ -978,6 +997,16 @@
     function exportSchedule(scheduleId) {
         const schedule = generatedSchedules.find(s => s.id === scheduleId);
         if (!schedule) return;
+        
+        // Track export in Google Analytics
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'export_schedule', {
+                'event_category': 'engagement',
+                'event_label': `Schedule ${scheduleId}`,
+                'value': schedule.score
+            });
+        }
+        
         const text = `Clemson Schedule ${scheduleId} - Score: ${schedule.score}%\nSpring 2026\n\n` +
             schedule.sections.map(section => {
                 const meeting = section.meetingsFaculty && section.meetingsFaculty[0]?.meetingTime;
@@ -1000,12 +1029,6 @@
         a.click();
         URL.revokeObjectURL(url);
     }
-    
-    window.removeCourse = removeCourse;
-    window.removeLinkedGroup = removeLinkedGroup;
-    window.removeCourseFromLink = removeCourseFromLink;
-    window.handleLinkSelect = handleLinkSelect;
-    window.exportSchedule = exportSchedule;
     </script>
 </body>
 </html>
