@@ -653,10 +653,16 @@
     
     honorsCheckbox.addEventListener('change', (e) => {
         isHonors = e.target.checked;
+        // Clear schedules when changing special programs
+        generatedSchedules = [];
+        schedulesSection.classList.add('hidden');
     });
     
     riseCheckbox.addEventListener('change', (e) => {
         isRise = e.target.checked;
+        // Clear schedules when changing special programs
+        generatedSchedules = [];
+        schedulesSection.classList.add('hidden');
     });
     
     addCourseBtn.addEventListener('click', () => addCourse());
@@ -667,6 +673,9 @@
             scheduleTypes.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             scheduleType = btn.dataset.type;
+            // Clear existing schedules when preference changes
+            generatedSchedules = [];
+            schedulesSection.classList.add('hidden');
         });
     });
     generateBtn.addEventListener('click', generateSchedules);
@@ -717,6 +726,9 @@
             courseInput.value = '';
             renderSelectedCourses();
             updateGenerateButton();
+            // Clear schedules when courses change
+            generatedSchedules = [];
+            schedulesSection.classList.add('hidden');
         } else {
             alert(`Course "${formattedCode}" is already added.`);
         }
@@ -728,6 +740,9 @@
         renderSelectedCourses();
         renderLinkedCourses();
         updateGenerateButton();
+        // Clear schedules when courses change
+        generatedSchedules = [];
+        schedulesSection.classList.add('hidden');
     }
     
     function renderSelectedCourses() {
@@ -758,6 +773,9 @@
     function removeLinkedGroup(id) {
         linkedCourses = linkedCourses.filter(link => link.id !== id);
         renderLinkedCourses();
+        // Clear schedules when links change
+        generatedSchedules = [];
+        schedulesSection.classList.add('hidden');
     }
     
     function addCourseToLink(linkId, course) {
@@ -765,6 +783,9 @@
         if (link && !link.courses.includes(course)) {
             link.courses.push(course);
             renderLinkedCourses();
+            // Clear schedules when links change
+            generatedSchedules = [];
+            schedulesSection.classList.add('hidden');
         }
     }
     
@@ -773,6 +794,9 @@
         if (link) {
             link.courses = link.courses.filter(c => c !== course);
             renderLinkedCourses();
+            // Clear schedules when links change
+            generatedSchedules = [];
+            schedulesSection.classList.add('hidden');
         }
     }
     
@@ -859,62 +883,133 @@
             .map(s => s.meetingsFaculty && s.meetingsFaculty[0]?.meetingTime)
             .filter(m => m && m.beginTime && m.endTime && parseTime(m.beginTime) > 0);
         
-        if (meetings.length === 0) return 75;
+        if (meetings.length === 0) return 70;
         
         const times = meetings.map(m => parseTime(m.beginTime));
         const endTimes = meetings.map(m => parseTime(m.endTime));
         
         const earliestStart = Math.min(...times);
         const latestEnd = Math.max(...endTimes);
+        const totalSpan = latestEnd - earliestStart;
+        const totalClassTime = meetings.reduce((sum, m) => {
+            return sum + (parseTime(m.endTime) - parseTime(m.beginTime));
+        }, 0);
+        const gapTime = totalSpan - totalClassTime;
         
-        if (scheduleType === 'early') {
-            if (earliestStart <= 480) score += 10;
-            if (earliestStart <= 540) score += 5;
-            if (latestEnd > 900) score -= 15;
-            if (latestEnd > 960) score -= 10;
-        } else if (scheduleType === 'late') {
-            if (earliestStart >= 600) score += 10;
-            if (earliestStart >= 660) score += 5;
-            if (latestEnd <= 840) score -= 10;
-        } else if (scheduleType === 'compact') {
-            const totalSpan = latestEnd - earliestStart;
-            const totalClassTime = meetings.reduce((sum, m) => {
-                return sum + (parseTime(m.endTime) - parseTime(m.beginTime));
-            }, 0);
-            const gapTime = totalSpan - totalClassTime;
-            if (gapTime <= 60) score += 20;
-            else if (gapTime <= 120) score += 10;
-            else if (gapTime > 240) score -= 15;
-        } else if (scheduleType === 'mwf') {
-            const mwfCount = meetings.filter(m => m.monday || m.wednesday || m.friday).length;
-            const trCount = meetings.filter(m => m.tuesday || m.thursday).length;
-            const mwfRatio = mwfCount / meetings.length;
-            score += mwfRatio * 25;
-            if (trCount > mwfCount) score -= 15;
-        } else if (scheduleType === 'tr') {
-            const trCount = meetings.filter(m => m.tuesday || m.thursday).length;
-            const mwfCount = meetings.filter(m => m.monday || m.wednesday || m.friday).length;
-            const trRatio = trCount / meetings.length;
-            score += trRatio * 25;
-            if (mwfCount > trCount) score -= 15;
-        } else if (scheduleType === 'balanced') {
-            if (earliestStart >= 480 && earliestStart <= 600) score += 10;
-            if (latestEnd >= 780 && latestEnd <= 960) score += 10;
-            const totalSpan = latestEnd - earliestStart;
-            if (totalSpan >= 300 && totalSpan <= 420) score += 5;
-        }
-        
+        // Seat availability scoring (important for all types)
         sections.forEach(section => {
-            if (section.seatsAvailable > 10) score += 5;
+            if (section.seatsAvailable > 20) score += 8;
+            else if (section.seatsAvailable > 10) score += 5;
             else if (section.seatsAvailable > 5) score += 2;
-            else if (section.seatsAvailable <= 0) score -= 20;
+            else if (section.seatsAvailable > 0) score -= 5;
+            else score -= 25; // Heavily penalize full classes
         });
         
+        // Day distribution analysis
+        const mwfCount = meetings.filter(m => m.monday || m.wednesday || m.friday).length;
+        const trCount = meetings.filter(m => m.tuesday || m.thursday).length;
         const hasFriday = meetings.some(m => m.friday);
-        if (!hasFriday && meetings.length > 1) score += 8;
         
-        if (earliestStart < 480) score -= 5;
-        if (latestEnd > 1020) score -= 5;
+        if (scheduleType === 'early') {
+            // Reward early starts (before 10 AM)
+            if (earliestStart <= 480) score += 20; // Before 8 AM
+            else if (earliestStart <= 540) score += 15; // Before 9 AM
+            else if (earliestStart <= 600) score += 10; // Before 10 AM
+            else if (earliestStart > 720) score -= 20; // After noon is bad
+            
+            // Reward early ends (before 3 PM)
+            if (latestEnd <= 900) score += 20; // Before 3 PM
+            else if (latestEnd <= 960) score += 10; // Before 4 PM
+            else if (latestEnd > 1020) score -= 25; // After 5 PM is very bad
+            
+            // Small gap penalty for early bird
+            if (gapTime > 180) score -= 10;
+            
+        } else if (scheduleType === 'late') {
+            // Reward late starts (after 10 AM)
+            if (earliestStart >= 720) score += 20; // After noon
+            else if (earliestStart >= 660) score += 15; // After 11 AM
+            else if (earliestStart >= 600) score += 10; // After 10 AM
+            else if (earliestStart < 540) score -= 20; // Before 9 AM is bad
+            
+            // Don't penalize late ends as much
+            if (latestEnd <= 840) score -= 15; // Ending too early is bad
+            else if (latestEnd >= 960) score += 5; // Later ends are okay
+            
+        } else if (scheduleType === 'compact') {
+            // Heavily reward minimal gaps
+            if (gapTime <= 30) score += 30;
+            else if (gapTime <= 60) score += 25;
+            else if (gapTime <= 90) score += 15;
+            else if (gapTime <= 120) score += 5;
+            else if (gapTime > 180) score -= 20;
+            else if (gapTime > 240) score -= 30;
+            
+            // Reward shorter overall spans
+            if (totalSpan <= 240) score += 20; // 4 hours or less
+            else if (totalSpan <= 300) score += 15; // 5 hours or less
+            else if (totalSpan <= 360) score += 10; // 6 hours or less
+            else if (totalSpan > 480) score -= 15; // More than 8 hours is bad
+            
+        } else if (scheduleType === 'mwf') {
+            // Strongly prefer MWF classes
+            const mwfRatio = meetings.length > 0 ? mwfCount / meetings.length : 0;
+            score += mwfRatio * 40; // Up to 40 bonus points
+            
+            // Penalize TR classes
+            if (trCount > mwfCount) score -= 25;
+            else if (trCount > 0) score -= (trCount * 5);
+            
+            // Bonus for having all MWF
+            if (mwfCount === meetings.length) score += 15;
+            
+        } else if (scheduleType === 'tr') {
+            // Strongly prefer TR classes
+            const trRatio = meetings.length > 0 ? trCount / meetings.length : 0;
+            score += trRatio * 40; // Up to 40 bonus points
+            
+            // Penalize MWF classes
+            if (mwfCount > trCount) score -= 25;
+            else if (mwfCount > 0) score -= (mwfCount * 5);
+            
+            // Bonus for having all TR
+            if (trCount === meetings.length) score += 15;
+            
+            // Small bonus for having MW/F free
+            if (!hasFriday) score += 10;
+            
+        } else if (scheduleType === 'balanced') {
+            // Prefer reasonable start times (8 AM - 10 AM)
+            if (earliestStart >= 480 && earliestStart <= 600) score += 15;
+            else if (earliestStart < 420 || earliestStart > 720) score -= 15;
+            
+            // Prefer reasonable end times (2 PM - 5 PM)
+            if (latestEnd >= 840 && latestEnd <= 1020) score += 15;
+            else if (latestEnd > 1080 || latestEnd < 780) score -= 15;
+            
+            // Moderate gaps are okay (1-2 hours)
+            if (gapTime >= 60 && gapTime <= 120) score += 10;
+            else if (gapTime > 240) score -= 15;
+            
+            // Slight preference for mixed days
+            const dayDiversity = Math.min(mwfCount, 1) + Math.min(trCount, 1);
+            if (dayDiversity === 2) score += 10;
+        }
+        
+        // Universal preferences (apply to all types except where noted)
+        // Slight bonus for no Friday classes (except for mwf type)
+        if (!hasFriday && scheduleType !== 'mwf' && meetings.length > 1) {
+            score += 8;
+        }
+        
+        // Slight penalty for very early or very late times (except when preferred)
+        if (scheduleType !== 'early' && earliestStart < 450) score -= 10; // Before 7:30 AM
+        if (scheduleType !== 'late' && latestEnd > 1050) score -= 10; // After 5:30 PM
+        
+        // Bonus for having some free time in the day (except compact)
+        if (scheduleType !== 'compact' && gapTime >= 60 && gapTime <= 180) {
+            score += 5;
+        }
         
         return Math.max(0, Math.min(100, Math.round(score)));
     }
@@ -1003,7 +1098,7 @@
     function generateCombinations(courseSections) {
         const courseKeys = Object.keys(courseSections);
         const combinations = [];
-        const maxCombinations = 5000; // Increase limit to get more variety
+        const maxCombinations = 10000; // Increased to ensure we get enough variety
         
         function backtrack(index, currentSchedule) {
             if (index === courseKeys.length) {
@@ -1232,58 +1327,4 @@
                                         ${faculty ? `
                                             <div class="detail-item">
                                                 <i class="fas fa-user detail-icon"></i>
-                                                <span>${faculty.displayName}</span>
-                                            </div>
-                                        ` : ''}
-                                        <div class="detail-item ${seatsClass}">
-                                            <i class="fas fa-users detail-icon"></i>
-                                            <span>${section.seatsAvailable} seats available</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-    
-    function exportSchedule(scheduleId) {
-        const schedule = generatedSchedules.find(s => s.id === scheduleId);
-        if (!schedule) return;
-        
-        // Track export in Google Analytics
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'export_schedule', {
-                'event_category': 'engagement',
-                'event_label': `Schedule ${scheduleId}`,
-                'value': schedule.score
-            });
-        }
-        
-        const text = `Clemson Schedule ${scheduleId} - Score: ${schedule.score}%\nSpring 2026\n\n` +
-            schedule.sections.map(section => {
-                const meeting = section.meetingsFaculty && section.meetingsFaculty[0]?.meetingTime;
-                const faculty = section.faculty && section.faculty[0];
-                const badges = [];
-                if (hasAttribute(section, 'HONR')) badges.push('[HONORS]');
-                if (isRiseOnly(section)) badges.push('[RiSE]');
-                return `${section.subject} ${section.courseNumber}-${section.sequenceNumber} ${badges.join(' ')}\n${section.courseTitle}\n` +
-                    `CRN: ${section.courseReferenceNumber}\n` +
-                    (meeting ? `Time: ${getDaysString(meeting)} ${formatTime(meeting.beginTime)} - ${formatTime(meeting.endTime)}\n` +
-                    `Location: ${meeting.building} ${meeting.room}\n` : 'Time: TBA\n') +
-                    (faculty ? `Instructor: ${faculty.displayName}\n` : '') +
-                    `Seats Available: ${section.seatsAvailable}\n`;
-            }).join('\n');
-        const blob = new Blob([text], { type: 'text/plain' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `clemson-schedule-${scheduleId}.txt`;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-    </script>
-</body>
-</html>
+                                                <span>${faculty.displayName}</span
