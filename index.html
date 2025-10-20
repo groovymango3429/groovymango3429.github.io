@@ -915,19 +915,35 @@
         });
         
         if (scheduleType === 'early') {
+            // Count 8 AM classes
             const eightAMCount = times.filter(t => t === 480).length;
-            score += eightAMCount * 25;
+            const totalClasses = times.length;
             
-            if (earliestStart === 480) score += 30;
-            else if (earliestStart <= 540) score += 10;
-            else if (earliestStart > 600) score -= 30;
+            // MASSIVE bonus for having all classes at 8 AM
+            if (eightAMCount === totalClasses) {
+                score += 100; // Guaranteed top score
+            } else {
+                // Huge per-class bonus for 8 AM
+                score += eightAMCount * 40;
+                // Penalize non-8 AM classes heavily
+                const nonEightAMCount = totalClasses - eightAMCount;
+                score -= nonEightAMCount * 25;
+            }
             
-            if (latestEnd <= 780) score += 30;
-            else if (latestEnd <= 840) score += 20;
-            else if (latestEnd <= 900) score += 10;
-            else if (latestEnd > 960) score -= 30;
+            // Bonus for early overall start
+            if (earliestStart === 480) score += 20;
+            else if (earliestStart === 510) score += 10; // 8:30
+            else if (earliestStart > 540) score -= 40; // After 9 AM is very bad
             
-            if (gapTime > 180) score -= 15;
+            // Reward early ending
+            if (latestEnd <= 720) score += 40; // Before noon
+            else if (latestEnd <= 780) score += 30; // Before 1 PM
+            else if (latestEnd <= 840) score += 20; // Before 2 PM
+            else if (latestEnd <= 900) score += 10; // Before 3 PM
+            else if (latestEnd > 960) score -= 35; // After 4 PM is terrible
+            
+            // Slight penalty for large gaps
+            if (gapTime > 180) score -= 10;
             
         } else if (scheduleType === 'late') {
             if (earliestStart >= 720) score += 25;
@@ -1031,7 +1047,7 @@
             score += 6;
         }
         
-        return Math.max(0, Math.min(100, Math.round(score)));
+        return Math.max(0, Math.min(200, Math.round(score)));
     }
     
     function getScheduleHash(sections) {
@@ -1169,6 +1185,26 @@
                 }
             }
             
+            // For early bird, prioritize all-8AM schedules
+            if (scheduleType === 'early') {
+                const all8AMSchedules = scheduleArray.filter(sections => {
+                    const meetings = sections
+                        .map(s => s.meetingsFaculty && s.meetingsFaculty[0]?.meetingTime)
+                        .filter(m => m && m.beginTime && m.endTime && parseTime(m.beginTime) > 0);
+                    
+                    if (meetings.length === 0) return false;
+                    
+                    return meetings.every(m => parseTime(m.beginTime) === 480);
+                });
+                
+                if (all8AMSchedules.length > 0) {
+                    // Prioritize all-8AM schedules
+                    scheduleArray = all8AMSchedules.concat(
+                        scheduleArray.filter(s => !all8AMSchedules.includes(s))
+                    );
+                }
+            }
+            
             let scoredSchedules = scheduleArray.map((sections, idx) => ({
                 id: idx + 1,
                 sections,
@@ -1192,8 +1228,12 @@
             }
             
             generatedSchedules.sort((a, b) => b.finalScore - a.finalScore);
+            
+            // Normalize scores to 0-100 range for display
+            const maxScore = generatedSchedules.length > 0 ? generatedSchedules[0].finalScore : 100;
             generatedSchedules = generatedSchedules.map((schedule, idx) => ({
                 ...schedule,
+                displayScore: Math.round((schedule.finalScore / maxScore) * 100),
                 id: idx + 1
             }));
             
@@ -1333,8 +1373,7 @@
             calendarHTML += '<div class="time-grid">';
             
             timeSlots.forEach((slot, index) => {
-                calendarHTML += `<div class="time-grid-line" style="top: ${index * 60}
-px;"></div>`;
+                calendarHTML += `<div class="time-grid-line" style="top: ${index * 60}px;"></div>`;
             });
             
             const dayName = day.toLowerCase();
@@ -1377,13 +1416,14 @@ px;"></div>`;
         readySection.classList.add('hidden');
         schedulesSection.classList.remove('hidden');
         schedulesList.innerHTML = generatedSchedules.map(schedule => {
-            const scoreClass = schedule.score >= 80 ? 'score-high' :
-                              schedule.score >= 60 ? 'score-medium' : 'score-low';
+            const scoreToDisplay = schedule.displayScore || schedule.score;
+            const scoreClass = scoreToDisplay >= 80 ? 'score-high' :
+                              scoreToDisplay >= 60 ? 'score-medium' : 'score-low';
             return `
                 <div class="schedule-card">
                     <div class="schedule-header">
                         <div class="schedule-info">
-                            <div class="score-badge ${scoreClass}">Score: ${schedule.score}%</div>
+                            <div class="score-badge ${scoreClass}">Score: ${scoreToDisplay}%</div>
                             <span style="color: #6b7280;">Schedule Option ${schedule.id}</span>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
@@ -1447,11 +1487,12 @@ px;"></div>`;
             gtag('event', 'export_schedule', {
                 'event_category': 'engagement',
                 'event_label': `Schedule ${scheduleId}`,
-                'value': schedule.score
+                'value': schedule.displayScore || schedule.score
             });
         }
         
-        const text = `Clemson Schedule ${scheduleId} - Score: ${schedule.score}%\nSpring 2026\n\n` +
+        const scoreToDisplay = schedule.displayScore || schedule.score;
+        const text = `Clemson Schedule ${scheduleId} - Score: ${scoreToDisplay}%\nSpring 2026\n\n` +
             schedule.sections.map(section => {
                 const meeting = section.meetingsFaculty && section.meetingsFaculty[0]?.meetingTime;
                 const faculty = section.faculty && section.faculty[0];
