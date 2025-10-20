@@ -215,6 +215,113 @@
             font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;
         }
         .btn-export:hover { background: #3d2160; }
+        .btn-toggle {
+            background: #f56600; color: white; border: none; padding: 0.5rem 1rem;
+            font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; transition: background 0.2s;
+        }
+        .btn-toggle:hover { background: #d45500; }
+        
+        /* Calendar Styles */
+        .calendar-container {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(5, 1fr);
+            min-height: 500px;
+        }
+        .time-column {
+            border-right: 2px solid #e5e7eb;
+            background: #f9fafb;
+        }
+        .time-slot {
+            height: 60px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+        .day-column {
+            border-right: 1px solid #e5e7eb;
+            position: relative;
+            background: #fafafa;
+        }
+        .day-column:last-child {
+            border-right: none;
+        }
+        .day-header {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #522d80;
+            border-bottom: 2px solid #e5e7eb;
+            background: white;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .time-grid {
+            position: relative;
+            height: 100%;
+        }
+        .time-grid-line {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 60px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .class-block {
+            position: absolute;
+            left: 4px;
+            right: 4px;
+            background: linear-gradient(135deg, #f56600 0%, #ff8534 100%);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(245, 102, 0, 0.3);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .class-block:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 102, 0, 0.5);
+            z-index: 20;
+        }
+        .class-block-title {
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .class-block-time {
+            font-size: 0.65rem;
+            opacity: 0.9;
+        }
+        .class-block-location {
+            font-size: 0.65rem;
+            opacity: 0.9;
+            margin-top: 0.25rem;
+        }
+        
+        /* List View Styles */
+        .list-view {
+            display: none;
+        }
+        .list-view.active {
+            display: block;
+        }
         .class-section {
             border: 2px solid #e5e7eb; padding: 1rem; margin-bottom: 1rem;
             transition: all 0.2s;
@@ -236,6 +343,7 @@
         .seats-high { color: #059669; }
         .seats-medium { color: #d97706; }
         .seats-low { color: #dc2626; }
+        
         .ready-card {
             background: linear-gradient(135deg, #fff7ed 0%, #f5f3ff 100%); 
             border: 3px solid #f56600; 
@@ -251,7 +359,7 @@
         }
         .spinner {
             width: 3rem; height: 3rem; border: 4px solid rgba(245, 102, 0, 0.3);
-            border-top-color: #f56600; animation: spin 1s linear infinite;
+            border-top-color: #f56600; animation: spin 1s linear infinite; border-radius: 50%;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         .loading-overlay p { color: white; font-size: 1.25rem; font-weight: 600; margin-top: 1rem; }
@@ -313,6 +421,21 @@
             .input-group { flex-direction: column; }
             .section-header { flex-direction: column; align-items: flex-start; }
             .schedule-header { flex-direction: column; align-items: flex-start; }
+            .calendar-grid {
+                grid-template-columns: 50px repeat(5, 1fr);
+                font-size: 0.75rem;
+            }
+            .time-slot {
+                height: 50px;
+                font-size: 0.65rem;
+            }
+            .time-grid-line {
+                height: 50px;
+            }
+            .class-block {
+                font-size: 0.65rem;
+                padding: 0.25rem;
+            }
             .credit, .dev-notice {
                 position: static;
                 margin: 1rem auto;
@@ -796,6 +919,14 @@
         return Math.max(0, Math.min(100, Math.round(score)));
     }
     
+    // Create a unique hash for a schedule combination to avoid duplicates
+    function getScheduleHash(sections) {
+        return sections
+            .map(s => `${s.subject}-${s.courseNumber}-${s.sequenceNumber}`)
+            .sort()
+            .join('|');
+    }
+    
     async function generateSchedules() {
         loadingOverlay.classList.remove('hidden');
         
@@ -835,12 +966,31 @@
                 loadingOverlay.classList.add('hidden');
                 return;
             }
-            generatedSchedules = allSchedules.map((sections, idx) => ({
-                id: idx + 1,
-                sections,
-                score: scoreSchedule(sections)
-            })).sort((a, b) => b.score - a.score);
-            generatedSchedules = generatedSchedules.slice(0, 10);
+            
+            // Use a Set to track unique schedules
+            const uniqueSchedules = new Map();
+            
+            allSchedules.forEach(sections => {
+                const hash = getScheduleHash(sections);
+                if (!uniqueSchedules.has(hash)) {
+                    uniqueSchedules.set(hash, sections);
+                }
+            });
+            
+            // Convert unique schedules to array and score them
+            generatedSchedules = Array.from(uniqueSchedules.values())
+                .map((sections, idx) => ({
+                    id: idx + 1,
+                    sections,
+                    score: scoreSchedule(sections)
+                }))
+                .sort((a, b) => b.score - a.score)
+                .slice(0, 10)
+                .map((schedule, idx) => ({
+                    ...schedule,
+                    id: idx + 1
+                }));
+            
             loadingOverlay.classList.add('hidden');
             renderSchedules();
         } catch (error) {
@@ -853,9 +1003,13 @@
     function generateCombinations(courseSections) {
         const courseKeys = Object.keys(courseSections);
         const combinations = [];
+        const maxCombinations = 5000; // Increase limit to get more variety
+        
         function backtrack(index, currentSchedule) {
             if (index === courseKeys.length) {
-                if (isValidLinkedSchedule(currentSchedule)) combinations.push([...currentSchedule]);
+                if (isValidLinkedSchedule(currentSchedule)) {
+                    combinations.push([...currentSchedule]);
+                }
                 return;
             }
             const courseKey = courseKeys[index];
@@ -866,7 +1020,7 @@
                     backtrack(index + 1, currentSchedule);
                     currentSchedule.pop();
                 }
-                if (combinations.length >= 1000) return;
+                if (combinations.length >= maxCombinations) return;
             }
         }
         backtrack(0, []);
@@ -927,6 +1081,95 @@
         return badges.join('');
     }
     
+    function toggleView(scheduleId) {
+        const calendarView = document.getElementById(`calendar-${scheduleId}`);
+        const listView = document.getElementById(`list-${scheduleId}`);
+        const toggleBtn = document.getElementById(`toggle-${scheduleId}`);
+        
+        if (listView.classList.contains('active')) {
+            listView.classList.remove('active');
+            calendarView.style.display = 'block';
+            toggleBtn.innerHTML = '<i class="fas fa-list"></i> Show List View';
+        } else {
+            listView.classList.add('active');
+            calendarView.style.display = 'none';
+            toggleBtn.innerHTML = '<i class="fas fa-calendar"></i> Show Calendar View';
+        }
+    }
+    
+    function renderCalendar(sections, scheduleId) {
+        const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+        const timeSlots = [];
+        
+        // Generate time slots from 7 AM to 9 PM
+        for (let hour = 7; hour <= 21; hour++) {
+            const displayHour = hour > 12 ? hour - 12 : hour;
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            timeSlots.push({
+                time: `${displayHour}:00 ${ampm}`,
+                minutes: hour * 60
+            });
+        }
+        
+        let calendarHTML = '<div class="calendar-container"><div class="calendar-grid">';
+        
+        // Time column header (empty cell)
+        calendarHTML += '<div style="grid-column: 1; grid-row: 1; border-right: 2px solid #e5e7eb; background: white;"></div>';
+        
+        // Day headers
+        days.forEach((day, index) => {
+            calendarHTML += `<div class="day-header" style="grid-column: ${index + 2}; grid-row: 1;">${day}</div>`;
+        });
+        
+        // Time labels
+        timeSlots.forEach((slot, index) => {
+            calendarHTML += `<div class="time-slot" style="grid-column: 1; grid-row: ${index + 2};">${slot.time}</div>`;
+        });
+        
+        // Day columns with time grid lines
+        days.forEach((day, dayIndex) => {
+            calendarHTML += `<div class="day-column" style="grid-column: ${dayIndex + 2}; grid-row: 2 / ${timeSlots.length + 2};">`;
+            calendarHTML += '<div class="time-grid">';
+            
+            // Add grid lines
+            timeSlots.forEach((slot, index) => {
+                calendarHTML += `<div class="time-grid-line" style="top: ${index * 60}px;"></div>`;
+            });
+            
+            // Add class blocks for this day
+            const dayName = day.toLowerCase();
+            sections.forEach(section => {
+                const meeting = section.meetingsFaculty && section.meetingsFaculty[0]?.meetingTime;
+                if (!meeting || !meeting[dayName]) return;
+                
+                const startMinutes = parseTime(meeting.beginTime);
+                const endMinutes = parseTime(meeting.endTime);
+                const startHour = Math.floor(startMinutes / 60);
+                
+                // Calculate position (7 AM = 0 minutes on the calendar)
+                const topPosition = (startMinutes - (7 * 60));
+                const height = endMinutes - startMinutes;
+                
+                const courseCode = `${section.subject} ${section.courseNumber}`;
+                const location = meeting.building && meeting.room ? `${meeting.building} ${meeting.room}` : 'TBA';
+                
+                calendarHTML += `
+                    <div class="class-block" style="top: ${topPosition}px; height: ${height}px;" 
+                         title="${section.courseTitle}&#10;${formatTime(meeting.beginTime)} - ${formatTime(meeting.endTime)}&#10;${location}">
+                        <div class="class-block-title">${courseCode}</div>
+                        <div class="class-block-time">${formatTime(meeting.beginTime)} - ${formatTime(meeting.endTime)}</div>
+                        ${height > 60 ? `<div class="class-block-location">${location}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            calendarHTML += '</div></div>';
+        });
+        
+        calendarHTML += '</div></div>';
+        return calendarHTML;
+    }
+    
     function renderSchedules() {
         if (generatedSchedules.length === 0) {
             schedulesSection.classList.add('hidden');
@@ -945,11 +1188,23 @@
                             <div class="score-badge ${scoreClass}">Score: ${schedule.score}%</div>
                             <span style="color: #6b7280;">Schedule Option ${schedule.id}</span>
                         </div>
-                        <button class="btn-export" onclick="exportSchedule(${schedule.id})">
-                            <i class="fas fa-download"></i> Export
-                        </button>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="btn-toggle" id="toggle-${schedule.id}" onclick="toggleView(${schedule.id})">
+                                <i class="fas fa-list"></i> Show List View
+                            </button>
+                            <button class="btn-export" onclick="exportSchedule(${schedule.id})">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
                     </div>
-                    <div class="sections-list">
+                    
+                    <!-- Calendar View -->
+                    <div id="calendar-${schedule.id}">
+                        ${renderCalendar(schedule.sections, schedule.id)}
+                    </div>
+                    
+                    <!-- List View -->
+                    <div id="list-${schedule.id}" class="list-view">
                         ${schedule.sections.map(section => {
                             const meeting = section.meetingsFaculty && section.meetingsFaculty[0]?.meetingTime;
                             const faculty = section.faculty && section.faculty[0];
