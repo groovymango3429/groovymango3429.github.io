@@ -1327,4 +1327,62 @@
                                         ${faculty ? `
                                             <div class="detail-item">
                                                 <i class="fas fa-user detail-icon"></i>
-                                                <span>${faculty.displayName}</span
+                                                                                                <span>${faculty.displayName}</span>
+                                            </div>
+                                        ` : ''}
+                                        <div class="detail-item ${seatsClass}">
+                                            <i class="fas fa-users detail-icon"></i>
+                                            <span>${section.seatsAvailable} seats available</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function exportSchedule(scheduleId) {
+        const schedule = generatedSchedules.find(s => s.id === scheduleId);
+        if (!schedule) return;
+        
+        // Track export in Google Analytics
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'export_schedule', {
+                'event_category': 'engagement',
+                'event_label': `Schedule ${scheduleId}`,
+                'value': schedule.score
+            });
+        }
+        
+        const text = `Clemson Schedule ${scheduleId} - Score: ${schedule.score}%\nSpring 2026\n\n` +
+            schedule.sections.map(section => {
+                const meeting = section.meetingsFaculty && section.meetingsFaculty[0]?.meetingTime;
+                const faculty = section.faculty && section.faculty[0];
+                const badges = [];
+                if (hasAttribute(section, 'HONR')) badges.push('[HONORS]');
+                if (isRiseOnly(section)) badges.push('[RiSE]');
+                return `${section.subject} ${section.courseNumber}-${section.sequenceNumber} ${badges.join(' ')}\n${section.courseTitle}\n` +
+                    `CRN: ${section.courseReferenceNumber}\n` +
+                    (meeting ? `Time: ${getDaysString(meeting)} ${formatTime(meeting.beginTime)} - ${formatTime(meeting.endTime)}\n` +
+                    `Location: ${meeting.building} ${meeting.room}\n` : 'Time: TBA\n') +
+                    (faculty ? `Instructor: ${faculty.displayName}\n` : '') +
+                    `Seats Available: ${section.seatsAvailable}\n`;
+            }).join('\n');
+        const blob = new Blob([text], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `clemson-schedule-${scheduleId}.txt`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+    </script>
+</body>
+</html>
+
+
+
+
