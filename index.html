@@ -898,7 +898,6 @@
         const trCount = meetings.filter(m => m.tuesday || m.thursday).length;
         const hasFriday = meetings.some(m => m.friday);
         
-        // Count unique days
         const uniqueDays = new Set();
         meetings.forEach(m => {
             if (m.monday) uniqueDays.add('M');
@@ -909,7 +908,6 @@
         });
         const numDays = uniqueDays.size;
         
-        // Check for lunch gap (12 PM - 2 PM = 720 - 840 minutes)
         const hasLunchGap = meetings.every(m => {
             const start = parseTime(m.beginTime);
             const end = parseTime(m.endTime);
@@ -917,19 +915,17 @@
         });
         
         if (scheduleType === 'early') {
-            // Strongly prefer 8 AM starts (480 minutes)
             const eightAMCount = times.filter(t => t === 480).length;
-            score += eightAMCount * 25; // Big bonus for 8 AM classes
+            score += eightAMCount * 25;
             
-            if (earliestStart === 480) score += 30; // Bonus if earliest is 8 AM
-            else if (earliestStart <= 540) score += 10; // Small bonus for 9 AM
-            else if (earliestStart > 600) score -= 30; // Penalty for starting after 10 AM
+            if (earliestStart === 480) score += 30;
+            else if (earliestStart <= 540) score += 10;
+            else if (earliestStart > 600) score -= 30;
             
-            // Strong preference for early endings
-            if (latestEnd <= 780) score += 30; // Before 1 PM
-            else if (latestEnd <= 840) score += 20; // Before 2 PM
-            else if (latestEnd <= 900) score += 10; // Before 3 PM
-            else if (latestEnd > 960) score -= 30; // After 4 PM is bad
+            if (latestEnd <= 780) score += 30;
+            else if (latestEnd <= 840) score += 20;
+            else if (latestEnd <= 900) score += 10;
+            else if (latestEnd > 960) score -= 30;
             
             if (gapTime > 180) score -= 15;
             
@@ -975,23 +971,36 @@
             if (!hasFriday) score += 12;
             
         } else if (scheduleType === 'no-friday') {
-            if (!hasFriday) score += 50; // Huge bonus for no Friday
-            else score -= 40; // Big penalty for having Friday
+            if (!hasFriday) {
+                score += 50;
+                
+                if (earliestStart === 480) score += 10;
+                if (numDays === 4) score += 8;
+                if (numDays === 3) score += 12;
+                
+                if (uniqueDays.has('T') && uniqueDays.has('R') && !uniqueDays.has('M')) score += 5;
+                if (uniqueDays.has('M') && uniqueDays.has('W') && !uniqueDays.has('T')) score += 5;
+            } else {
+                const fridayCount = meetings.filter(m => m.friday).length;
+                score -= (fridayCount * 20);
+                
+                const fridayTimes = meetings.filter(m => m.friday).map(m => parseTime(m.beginTime));
+                const earliestFriday = fridayTimes.length > 0 ? Math.min(...fridayTimes) : 999;
+                if (earliestFriday <= 540) score += 10;
+            }
             
         } else if (scheduleType === 'long-lunch') {
-            if (hasLunchGap) score += 40; // Big bonus for lunch break
-            else score -= 25; // Penalty for no lunch break
+            if (hasLunchGap) score += 40;
+            else score -= 25;
             
-            // Additional scoring for time span
             if (gapTime >= 120) score += 10;
             
         } else if (scheduleType === 'three-day') {
-            if (numDays === 3) score += 50; // Perfect!
-            else if (numDays === 4) score += 20; // Close
-            else if (numDays === 2) score += 30; // Even better
-            else if (numDays === 5) score -= 30; // Bad
+            if (numDays === 3) score += 50;
+            else if (numDays === 4) score += 20;
+            else if (numDays === 2) score += 30;
+            else if (numDays === 5) score -= 30;
             
-            // Prefer TR + one other day OR MWF
             if (numDays === 3) {
                 if (uniqueDays.has('T') && uniqueDays.has('R')) score += 15;
                 if (uniqueDays.has('M') && uniqueDays.has('W') && uniqueDays.has('F')) score += 15;
@@ -1011,7 +1020,6 @@
             if (dayDiversity === 2) score += 12;
         }
         
-        // Universal bonuses
         if (!hasFriday && scheduleType !== 'mwf' && scheduleType !== 'no-friday' && meetings.length > 1) {
             score += 10;
         }
@@ -1031,6 +1039,62 @@
             .map(s => `${s.subject}-${s.courseNumber}-${s.sequenceNumber}`)
             .sort()
             .join('|');
+    }
+    
+    function getScheduleDiversity(schedule, existingSchedules) {
+        let diversityScore = 0;
+        const meetings = schedule.sections
+            .map(s => s.meetingsFaculty && s.meetingsFaculty[0]?.meetingTime)
+            .filter(m => m && m.beginTime && m.endTime);
+        
+        const times = meetings.map(m => parseTime(m.beginTime));
+        const earliestStart = times.length > 0 ? Math.min(...times) : 0;
+        const endTimes = meetings.map(m => parseTime(m.endTime));
+        const latestEnd = endTimes.length > 0 ? Math.max(...endTimes) : 0;
+        
+        const uniqueDays = new Set();
+        meetings.forEach(m => {
+            if (m.monday) uniqueDays.add('M');
+            if (m.tuesday) uniqueDays.add('T');
+            if (m.wednesday) uniqueDays.add('W');
+            if (m.thursday) uniqueDays.add('R');
+            if (m.friday) uniqueDays.add('F');
+        });
+        
+        existingSchedules.forEach(existing => {
+            const existingMeetings = existing.sections
+                .map(s => s.meetingsFaculty && s.meetingsFaculty[0]?.meetingTime)
+                .filter(m => m && m.beginTime && m.endTime);
+            
+            const existingTimes = existingMeetings.map(m => parseTime(m.beginTime));
+            const existingEarliestStart = existingTimes.length > 0 ? Math.min(...existingTimes) : 0;
+            
+            const existingDays = new Set();
+            existingMeetings.forEach(m => {
+                if (m.monday) existingDays.add('M');
+                if (m.tuesday) existingDays.add('T');
+                if (m.wednesday) existingDays.add('W');
+                if (m.thursday) existingDays.add('R');
+                if (m.friday) existingDays.add('F');
+            });
+            
+            if (Math.abs(earliestStart - existingEarliestStart) < 60) diversityScore -= 5;
+            if (uniqueDays.size === existingDays.size) diversityScore -= 3;
+            
+            const matchingSections = schedule.sections.filter(s1 => 
+                existing.sections.some(s2 => 
+                    s1.subject === s2.subject && 
+                    s1.courseNumber === s2.courseNumber && 
+                    s1.sequenceNumber === s2.sequenceNumber
+                )
+            ).length;
+            
+            const matchRatio = matchingSections / schedule.sections.length;
+            if (matchRatio > 0.7) diversityScore -= 15;
+            else if (matchRatio > 0.5) diversityScore -= 8;
+        });
+        
+        return diversityScore;
     }
     
     async function generateSchedules() {
@@ -1063,6 +1127,7 @@
                 }
                 courseSections[courseCode] = sections;
             }
+            
             const allSchedules = generateCombinations(courseSections);
             if (allSchedules.length === 0) {
                 alert('No valid schedules found. Try adjusting your course selections or preferences.');
@@ -1079,18 +1144,58 @@
                 }
             });
             
-            generatedSchedules = Array.from(uniqueSchedules.values())
-                .map((sections, idx) => ({
-                    id: idx + 1,
-                    sections,
-                    score: scoreSchedule(sections)
-                }))
-                .sort((a, b) => b.score - a.score)
-                .slice(0, 20) // Increased from 10 to 20
-                .map((schedule, idx) => ({
-                    ...schedule,
-                    id: idx + 1
-                }));
+            let scheduleArray = Array.from(uniqueSchedules.values());
+            
+            if (scheduleType === 'no-friday') {
+                const fridayFreeSchedules = scheduleArray.filter(sections => {
+                    const meetings = sections
+                        .map(s => s.meetingsFaculty && s.meetingsFaculty[0]?.meetingTime)
+                        .filter(m => m && m.beginTime && m.endTime);
+                    return !meetings.some(m => m.friday);
+                });
+                
+                if (fridayFreeSchedules.length >= 5) {
+                    scheduleArray = fridayFreeSchedules;
+                } else if (fridayFreeSchedules.length > 0) {
+                    const fridayMinimizedSchedules = scheduleArray.filter(sections => {
+                        const meetings = sections
+                            .map(s => s.meetingsFaculty && s.meetingsFaculty[0]?.meetingTime)
+                            .filter(m => m && m.beginTime && m.endTime);
+                        const fridayCount = meetings.filter(m => m.friday).length;
+                        return fridayCount <= 1;
+                    });
+                    
+                    scheduleArray = [...fridayFreeSchedules, ...fridayMinimizedSchedules];
+                }
+            }
+            
+            let scoredSchedules = scheduleArray.map((sections, idx) => ({
+                id: idx + 1,
+                sections,
+                score: scoreSchedule(sections),
+                diversityScore: 0
+            }));
+            
+            scoredSchedules.sort((a, b) => b.score - a.score);
+            
+            generatedSchedules = [];
+            for (const schedule of scoredSchedules) {
+                if (generatedSchedules.length >= 20) break;
+                
+                const diversityScore = getScheduleDiversity(schedule, generatedSchedules);
+                schedule.diversityScore = diversityScore;
+                schedule.finalScore = schedule.score + diversityScore;
+                
+                if (generatedSchedules.length < 5 || diversityScore > -15) {
+                    generatedSchedules.push(schedule);
+                }
+            }
+            
+            generatedSchedules.sort((a, b) => b.finalScore - a.finalScore);
+            generatedSchedules = generatedSchedules.map((schedule, idx) => ({
+                ...schedule,
+                id: idx + 1
+            }));
             
             loadingOverlay.classList.add('hidden');
             renderSchedules();
@@ -1104,7 +1209,7 @@
     function generateCombinations(courseSections) {
         const courseKeys = Object.keys(courseSections);
         const combinations = [];
-        const maxCombinations = 20000; // Increased from 10000
+        const maxCombinations = 20000;
         
         function backtrack(index, currentSchedule) {
             if (index === courseKeys.length) {
@@ -1228,7 +1333,8 @@
             calendarHTML += '<div class="time-grid">';
             
             timeSlots.forEach((slot, index) => {
-                calendarHTML += `<div class="time-grid-line" style="top: ${index * 60}px;"></div>`;
+                calendarHTML += `<div class="time-grid-line" style="top: ${index * 60}
+px;"></div>`;
             });
             
             const dayName = day.toLowerCase();
@@ -1326,8 +1432,7 @@
                                     </div>
                                 </div>
                             `;
-                        }).
-join('')}
+                        }).join('')}
                     </div>
                 </div>
             `;
