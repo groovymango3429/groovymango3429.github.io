@@ -1089,7 +1089,7 @@
         if (listView.classList.contains('active')) {
             listView.classList.remove('active');
             calendarView.style.display = 'block';
-            toggleBtn.innerHTML = '<i class="fas fa-list"></i> Show List View';
+            toggleBtn.innerHTML = '<i class="fas fa-list"></i> Show Section Numbers';
         } else {
             listView.classList.add('active');
             calendarView.style.display = 'none';
@@ -1190,7 +1190,7 @@
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
                             <button class="btn-toggle" id="toggle-${schedule.id}" onclick="toggleView(${schedule.id})">
-                                <i class="fas fa-list"></i> Show List View
+                                <i class="fas fa-list"></i> Show Section Numbers
                             </button>
                             <button class="btn-export" onclick="exportSchedule(${schedule.id})">
                                 <i class="fas fa-download"></i> Export
