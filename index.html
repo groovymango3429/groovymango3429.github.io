@@ -185,17 +185,17 @@
         }
         .linked-course-tag button:hover { background: #f5f3ff; }
         .schedule-types {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem;
         }
         .schedule-type {
-            background: white; border: 2px solid #e5e7eb; padding: 1rem;
+            background: white; border: 2px solid #e5e7eb; padding: 0.75rem;
             cursor: pointer; transition: all 0.2s; text-align: center;
         }
         .schedule-type:hover { border-color: #f56600; }
         .schedule-type.active { border-color: #f56600; background: #fff7ed; }
-        .schedule-type .icon { font-size: 2rem; margin-bottom: 0.5rem; }
-        .schedule-type .label { font-weight: 600; color: #522d80; margin-bottom: 0.25rem; font-size: 0.9rem; }
-        .schedule-type .desc { font-size: 0.7rem; color: #6b7280; }
+        .schedule-type .icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+        .schedule-type .label { font-weight: 600; color: #522d80; margin-bottom: 0.25rem; font-size: 0.85rem; }
+        .schedule-type .desc { font-size: 0.65rem; color: #6b7280; }
         .schedule-card {
             background: white; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             padding: 1.5rem; margin-bottom: 1.5rem; border-top: 4px solid #f56600;
@@ -512,17 +512,22 @@
                     <button class="schedule-type active" data-type="balanced">
                         <div class="icon">⚖️</div>
                         <div class="label">Balanced</div>
-                        <div class="desc">Even spread throughout day</div>
+                        <div class="desc">Even spread</div>
                     </button>
                     <button class="schedule-type" data-type="early">
                         <div class="icon">🌅</div>
                         <div class="label">Early Bird</div>
-                        <div class="desc">8 AM starts, done early</div>
+                        <div class="desc">8 AM, done early</div>
+                    </button>
+                    <button class="schedule-type" data-type="mid-morning">
+                        <div class="icon">☕</div>
+                        <div class="label">Mid-Morning</div>
+                        <div class="desc">9 AM start</div>
                     </button>
                     <button class="schedule-type" data-type="late">
                         <div class="icon">🌙</div>
                         <div class="label">Night Owl</div>
-                        <div class="desc">Start later in day</div>
+                        <div class="desc">Start later</div>
                     </button>
                     <button class="schedule-type" data-type="compact">
                         <div class="icon">⚡</div>
@@ -532,7 +537,7 @@
                     <button class="schedule-type" data-type="mwf">
                         <div class="icon">📅</div>
                         <div class="label">MWF Focus</div>
-                        <div class="desc">Mon/Wed/Fri preferred</div>
+                        <div class="desc">M/W/F preferred</div>
                     </button>
                     <button class="schedule-type" data-type="tr">
                         <div class="icon">📆</div>
@@ -542,17 +547,17 @@
                     <button class="schedule-type" data-type="no-friday">
                         <div class="icon">🎉</div>
                         <div class="label">No Friday</div>
-                        <div class="desc">Keep Fridays free</div>
+                        <div class="desc">Fridays free</div>
                     </button>
                     <button class="schedule-type" data-type="long-lunch">
                         <div class="icon">🍽️</div>
                         <div class="label">Lunch Break</div>
-                        <div class="desc">Gap 12-2 PM</div>
+                        <div class="desc">12-2 PM gap</div>
                     </button>
                     <button class="schedule-type" data-type="three-day">
                         <div class="icon">🗓️</div>
                         <div class="label">3-Day Week</div>
-                        <div class="desc">Classes 3 days only</div>
+                        <div class="desc">3 days only</div>
                     </button>
                 </div>
             </div>
@@ -874,6 +879,7 @@
         return days.join('');
     }
     
+    // NEW IMPROVED SCORING SYSTEM
     function scoreSchedule(sections) {
         let score = 100;
         
@@ -919,103 +925,137 @@
             const eightAMCount = times.filter(t => t === 480).length;
             const totalClasses = times.length;
             
-            // MASSIVE bonus for having all classes at 8 AM
+            // CORE: All classes at 8 AM
             if (eightAMCount === totalClasses) {
-                score += 100; // Guaranteed top score
+                score += 100;
             } else {
-                // Huge per-class bonus for 8 AM
                 score += eightAMCount * 40;
-                // Penalize non-8 AM classes heavily
                 const nonEightAMCount = totalClasses - eightAMCount;
-                score -= nonEightAMCount * 25;
+                score -= nonEightAMCount * 30;
             }
             
-            // Bonus for early overall start
+            // Start time bonuses
             if (earliestStart === 480) score += 20;
-            else if (earliestStart === 510) score += 10; // 8:30
-            else if (earliestStart > 540) score -= 40; // After 9 AM is very bad
+            else if (earliestStart === 510) score += 10;
+            else if (earliestStart > 540) score -= 40;
             
-            // Reward early ending
-            if (latestEnd <= 720) score += 40; // Before noon
-            else if (latestEnd <= 780) score += 30; // Before 1 PM
-            else if (latestEnd <= 840) score += 20; // Before 2 PM
+            // CORE: Early ending (weighted HEAVILY)
+            if (latestEnd <= 720) score += 80; // Before noon
+            else if (latestEnd <= 780) score += 50; // Before 1 PM
+            else if (latestEnd <= 840) score += 30; // Before 2 PM
             else if (latestEnd <= 900) score += 10; // Before 3 PM
-            else if (latestEnd > 960) score -= 35; // After 4 PM is terrible
+            else if (latestEnd > 960) score -= 50; // After 4 PM
             
-            // Slight penalty for large gaps
+            if (gapTime > 180) score -= 15;
+            
+        } else if (scheduleType === 'mid-morning') {
+            // NEW MID-MORNING MODE: 9-ish AM start
+            const nineAMCount = times.filter(t => t >= 510 && t <= 570).length; // 8:30-9:30 AM
+            const totalClasses = times.length;
+            
+            // CORE: Classes starting around 9 AM
+            if (nineAMCount === totalClasses) {
+                score += 80;
+            } else {
+                score += nineAMCount * 35;
+            }
+            
+            // Start time preferences
+            if (earliestStart >= 510 && earliestStart <= 570) score += 40; // 8:30-9:30
+            else if (earliestStart >= 480 && earliestStart < 510) score += 20; // 8:00-8:30
+            else if (earliestStart < 480) score -= 30; // Before 8
+            else if (earliestStart > 600) score -= 35; // After 10
+            
+            // End time preferences (moderate afternoon)
+            if (latestEnd <= 840) score += 40; // Before 2 PM
+            else if (latestEnd <= 900) score += 30; // Before 3 PM
+            else if (latestEnd <= 960) score += 15; // Before 4 PM
+            else if (latestEnd > 1020) score -= 40; // After 5 PM
+            
             if (gapTime > 180) score -= 10;
             
         } else if (scheduleType === 'late') {
-            if (earliestStart >= 720) score += 25;
-            else if (earliestStart >= 660) score += 15;
-            else if (earliestStart >= 600) score += 10;
-            else if (earliestStart < 540) score -= 25;
+            // CORE: Late start
+            if (earliestStart >= 720) score += 60; // 12 PM or later
+            else if (earliestStart >= 660) score += 40; // 11 AM
+            else if (earliestStart >= 600) score += 20; // 10 AM
+            else if (earliestStart < 540) score -= 40; // Before 9 AM
             
-            if (latestEnd <= 840) score -= 20;
-            else if (latestEnd >= 960) score += 10;
+            // End time flexible
+            if (latestEnd >= 960) score += 20; // 4 PM or later
+            else if (latestEnd < 840) score -= 30; // Before 2 PM
+            
+            if (gapTime > 180) score -= 15;
             
         } else if (scheduleType === 'compact') {
-            if (gapTime <= 30) score += 35;
-            else if (gapTime <= 60) score += 28;
-            else if (gapTime <= 90) score += 18;
-            else if (gapTime <= 120) score += 8;
-            else if (gapTime > 180) score -= 25;
-            else if (gapTime > 240) score -= 35;
+            // CORE: Gap minimization
+            if (gapTime <= 30) score += 70;
+            else if (gapTime <= 60) score += 50;
+            else if (gapTime <= 90) score += 30;
+            else if (gapTime <= 120) score += 15;
+            else if (gapTime > 180) score -= 30;
+            else if (gapTime > 240) score -= 50;
             
-            if (totalSpan <= 240) score += 25;
-            else if (totalSpan <= 300) score += 18;
-            else if (totalSpan <= 360) score += 12;
-            else if (totalSpan > 480) score -= 20;
+            // CORE: Short total span
+            if (totalSpan <= 240) score += 50;
+            else if (totalSpan <= 300) score += 35;
+            else if (totalSpan <= 360) score += 20;
+            else if (totalSpan > 480) score -= 40;
             
         } else if (scheduleType === 'mwf') {
+            // CORE: MWF pattern
             const mwfRatio = meetings.length > 0 ? mwfCount / meetings.length : 0;
-            score += mwfRatio * 45;
+            score += Math.round(mwfRatio * 45);
+            
+            if (mwfCount === meetings.length) score += 60; // All MWF
             
             if (trCount > mwfCount) score -= 30;
-            else if (trCount > 0) score -= (trCount * 6);
-            
-            if (mwfCount === meetings.length) score += 20;
+            else if (trCount > 0) score -= (trCount * 10);
             
         } else if (scheduleType === 'tr') {
+            // CORE: TR pattern
             const trRatio = meetings.length > 0 ? trCount / meetings.length : 0;
-            score += trRatio * 45;
+            score += Math.round(trRatio * 45);
+            
+            if (trCount === meetings.length) score += 60; // All TR
+            if (!hasFriday) score += 20;
             
             if (mwfCount > trCount) score -= 30;
-            else if (mwfCount > 0) score -= (mwfCount * 6);
-            
-            if (trCount === meetings.length) score += 20;
-            if (!hasFriday) score += 12;
+            else if (mwfCount > 0) score -= (mwfCount * 10);
             
         } else if (scheduleType === 'no-friday') {
+            // CORE: Friday-free
             if (!hasFriday) {
-                score += 50;
+                score += 100;
                 
-                if (earliestStart === 480) score += 10;
-                if (numDays === 4) score += 8;
-                if (numDays === 3) score += 12;
+                if (numDays === 3) score += 20;
+                else if (numDays === 4) score += 10;
                 
                 if (uniqueDays.has('T') && uniqueDays.has('R') && !uniqueDays.has('M')) score += 5;
                 if (uniqueDays.has('M') && uniqueDays.has('W') && !uniqueDays.has('T')) score += 5;
             } else {
                 const fridayCount = meetings.filter(m => m.friday).length;
-                score -= (fridayCount * 20);
+                score -= (fridayCount * 40); // CORE penalty
                 
                 const fridayTimes = meetings.filter(m => m.friday).map(m => parseTime(m.beginTime));
                 const earliestFriday = fridayTimes.length > 0 ? Math.min(...fridayTimes) : 999;
-                if (earliestFriday <= 540) score += 10;
+                if (earliestFriday <= 540) score += 10; // Damage control
             }
             
         } else if (scheduleType === 'long-lunch') {
-            if (hasLunchGap) score += 40;
-            else score -= 25;
+            // CORE: Lunch gap
+            if (hasLunchGap) score += 50;
+            else score -= 35;
             
-            if (gapTime >= 120) score += 10;
+            if (gapTime >= 120) score += 30;
+            else if (gapTime < 60) score -= 20;
             
         } else if (scheduleType === 'three-day') {
-            if (numDays === 3) score += 50;
+            // CORE: Minimize days
+            if (numDays === 2) score += 60;
+            else if (numDays === 3) score += 50;
             else if (numDays === 4) score += 20;
-            else if (numDays === 2) score += 30;
-            else if (numDays === 5) score -= 30;
+            else if (numDays === 5) score -= 40;
             
             if (numDays === 3) {
                 if (uniqueDays.has('T') && uniqueDays.has('R')) score += 15;
@@ -1023,31 +1063,34 @@
             }
             
         } else if (scheduleType === 'balanced') {
-            if (earliestStart >= 480 && earliestStart <= 600) score += 15;
-            else if (earliestStart < 420 || earliestStart > 720) score -= 15;
+            // Moderate preferences
+            if (earliestStart >= 480 && earliestStart <= 600) score += 20;
+            else if (earliestStart < 420 || earliestStart > 720) score -= 20;
             
-            if (latestEnd >= 840 && latestEnd <= 1020) score += 15;
-            else if (latestEnd > 1080 || latestEnd < 780) score -= 15;
+            if (latestEnd >= 840 && latestEnd <= 1020) score += 20;
+            else if (latestEnd > 1080 || latestEnd < 780) score -= 20;
             
-            if (gapTime >= 60 && gapTime <= 120) score += 12;
-            else if (gapTime > 240) score -= 15;
+            // CORE: Reasonable gaps
+            if (gapTime >= 60 && gapTime <= 120) score += 20;
+            else if (gapTime > 240) score -= 30;
             
             const dayDiversity = Math.min(mwfCount, 1) + Math.min(trCount, 1);
-            if (dayDiversity === 2) score += 12;
+            if (dayDiversity === 2) score += 15;
         }
         
+        // Universal bonuses (smaller weights)
         if (!hasFriday && scheduleType !== 'mwf' && scheduleType !== 'no-friday' && meetings.length > 1) {
+            score += 15;
+        }
+        
+        if (scheduleType !== 'early' && scheduleType !== 'mid-morning' && earliestStart < 450) score -= 20;
+        if (scheduleType !== 'late' && latestEnd > 1050) score -= 20;
+        
+        if (scheduleType !== 'compact' && scheduleType !== 'long-lunch' && gapTime >= 60 && gapTime <= 180) {
             score += 10;
         }
         
-        if (scheduleType !== 'early' && earliestStart < 450) score -= 12;
-        if (scheduleType !== 'late' && latestEnd > 1050) score -= 12;
-        
-        if (scheduleType !== 'compact' && scheduleType !== 'long-lunch' && gapTime >= 60 && gapTime <= 180) {
-            score += 6;
-        }
-        
-        return Math.max(0, Math.min(200, Math.round(score)));
+        return Math.max(0, Math.min(300, Math.round(score)));
     }
     
     function getScheduleHash(sections) {
@@ -1065,8 +1108,6 @@
         
         const times = meetings.map(m => parseTime(m.beginTime));
         const earliestStart = times.length > 0 ? Math.min(...times) : 0;
-        const endTimes = meetings.map(m => parseTime(m.endTime));
-        const latestEnd = endTimes.length > 0 ? Math.max(...endTimes) : 0;
         
         const uniqueDays = new Set();
         meetings.forEach(m => {
@@ -1162,6 +1203,7 @@
             
             let scheduleArray = Array.from(uniqueSchedules.values());
             
+            // No Friday pre-filter
             if (scheduleType === 'no-friday') {
                 const fridayFreeSchedules = scheduleArray.filter(sections => {
                     const meetings = sections
@@ -1185,7 +1227,7 @@
                 }
             }
             
-            // For early bird, prioritize all-8AM schedules
+            // Early Bird pre-filter: prioritize all-8AM
             if (scheduleType === 'early') {
                 const all8AMSchedules = scheduleArray.filter(sections => {
                     const meetings = sections
@@ -1198,9 +1240,30 @@
                 });
                 
                 if (all8AMSchedules.length > 0) {
-                    // Prioritize all-8AM schedules
                     scheduleArray = all8AMSchedules.concat(
                         scheduleArray.filter(s => !all8AMSchedules.includes(s))
+                    );
+                }
+            }
+            
+            // Mid-Morning pre-filter: prioritize 9-ish starts
+            if (scheduleType === 'mid-morning') {
+                const all9AMSchedules = scheduleArray.filter(sections => {
+                    const meetings = sections
+                        .map(s => s.meetingsFaculty && s.meetingsFaculty[0]?.meetingTime)
+                        .filter(m => m && m.beginTime && m.endTime && parseTime(m.beginTime) > 0);
+                    
+                    if (meetings.length === 0) return false;
+                    
+                    return meetings.every(m => {
+                        const start = parseTime(m.beginTime);
+                        return start >= 510 && start <= 570; // 8:30-9:30 AM
+                    });
+                });
+                
+                if (all9AMSchedules.length > 0) {
+                    scheduleArray = all9AMSchedules.concat(
+                        scheduleArray.filter(s => !all9AMSchedules.includes(s))
                     );
                 }
             }
@@ -1260,8 +1323,7 @@
             }
             const courseKey = courseKeys[index];
             const sections = courseSections[courseKey];
-            for (const section of sections) {
-                if (!hasTimeConflict(currentSchedule, section)) {
+            for (const section of sections) {                if (!hasTimeConflict(currentSchedule, section)) {
                     currentSchedule.push(section);
                     backtrack(index + 1, currentSchedule);
                     currentSchedule.pop();
