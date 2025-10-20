@@ -668,6 +668,7 @@
                     <button class="schedule-type" data-type="mwf">
                         <div class="icon">📅</div>
                         <div class="label">MWF Focus</div>
+                        <div class="label">MWF Focus</div>
                         <div class="desc">Prefer Monday/Wednesday/Friday</div>
                     </button>
                     <button class="schedule-type" data-type="tr">
@@ -726,6 +727,7 @@
         <div class="spinner"></div>
         <p>Generating Schedules...</p>
     </div>
+    
     <script>
     let selectedCourses = [];
     let linkedCourses = [];
@@ -750,20 +752,16 @@
     const honorsCheckbox = document.getElementById('honorsCheckbox');
     const riseCheckbox = document.getElementById('riseCheckbox');
     
-    // Working visitor counter using localStorage with dynamic increment
     function loadVisitorCount() {
         const STORAGE_KEY = 'cuSchedulerCount';
         const BASE_COUNT = 147;
-        
         const lastVisit = sessionStorage.getItem('cuSchedulerVisited');
-        
         if (!lastVisit) {
             let currentCount = parseInt(localStorage.getItem(STORAGE_KEY) || BASE_COUNT);
             currentCount++;
             localStorage.setItem(STORAGE_KEY, currentCount);
             sessionStorage.setItem('cuSchedulerVisited', 'true');
         }
-        
         const displayCount = parseInt(localStorage.getItem(STORAGE_KEY) || BASE_COUNT);
         document.getElementById('visitorCount').textContent = displayCount;
     }
@@ -771,7 +769,6 @@
     function incrementScheduleCount() {
         const STORAGE_KEY = 'cuSchedulerCount';
         const BASE_COUNT = 147;
-        
         let currentCount = parseInt(localStorage.getItem(STORAGE_KEY) || BASE_COUNT);
         currentCount++;
         localStorage.setItem(STORAGE_KEY, currentCount);
@@ -796,14 +793,8 @@
     
     loadCoursesData();
     
-    honorsCheckbox.addEventListener('change', (e) => {
-        isHonors = e.target.checked;
-    });
-    
-    riseCheckbox.addEventListener('change', (e) => {
-        isRise = e.target.checked;
-    });
-    
+    honorsCheckbox.addEventListener('change', (e) => { isHonors = e.target.checked; });
+    riseCheckbox.addEventListener('change', (e) => { isRise = e.target.checked; });
     addCourseBtn.addEventListener('click', () => addCourse());
     courseInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addCourse(); });
     addLinkBtn.addEventListener('click', addLinkedGroup);
@@ -816,27 +807,19 @@
     });
     generateBtn.addEventListener('click', generateSchedules);
     
-    // Modal functions
     function showClassDetails(scheduleId, sectionIndex) {
         const schedule = generatedSchedules.find(s => s.id === scheduleId);
         if (!schedule) return;
-        
         const section = schedule.sections[sectionIndex];
         if (!section) return;
-        
         const meeting = section.meetingsFaculty && section.meetingsFaculty[0]?.meetingTime;
         const faculty = section.faculty && section.faculty[0];
-        
         document.getElementById('modalTitle').textContent = `${section.subject} ${section.courseNumber}-${section.sequenceNumber}`;
         document.getElementById('modalSubtitle').textContent = section.courseTitle;
-        
         const badges = [];
         if (hasAttribute(section, 'HONR')) badges.push('<span class="special-badge badge-honors">HONORS</span>');
         if (isRiseOnly(section)) badges.push('<span class="special-badge badge-rise">RiSE</span>');
-        
-        const seatsClass = section.seatsAvailable > 10 ? 'seats-high' :
-                          section.seatsAvailable > 5 ? 'seats-medium' : 'seats-low';
-        
+        const seatsClass = section.seatsAvailable > 10 ? 'seats-high' : section.seatsAvailable > 5 ? 'seats-medium' : 'seats-low';
         document.getElementById('modalBody').innerHTML = `
             <div class="detail-row">
                 <i class="fas fa-hashtag"></i>
@@ -905,7 +888,6 @@
                 </div>
             ` : ''}
         `;
-        
         document.getElementById('classModal').classList.add('active');
         document.body.style.overflow = 'hidden';
     }
@@ -915,18 +897,12 @@
         document.body.style.overflow = 'auto';
     }
     
-    // Close modal when clicking outside
     document.getElementById('classModal').addEventListener('click', (e) => {
-        if (e.target.id === 'classModal') {
-            closeClassModal();
-        }
+        if (e.target.id === 'classModal') closeClassModal();
     });
     
-    // Close modal with Escape key
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeClassModal();
-        }
+        if (e.key === 'Escape') closeClassModal();
     });
     
     function hasAttribute(section, attributeCode) {
@@ -941,10 +917,8 @@
     function canEnrollInSection(section) {
         const hasHonorsAttr = hasAttribute(section, 'HONR');
         const isRiseSection = isRiseOnly(section);
-        
         if (hasHonorsAttr && !isHonors) return false;
         if (isRiseSection && !isRise) return false;
-        
         return true;
     }
     
@@ -1074,9 +1048,7 @@
     }
     
     function handleLinkSelect(linkId, course) {
-        if (course) {
-            addCourseToLink(linkId, course);
-        }
+        if (course) addCourseToLink(linkId, course);
     }
     
     function updateGenerateButton() {
@@ -1112,28 +1084,14 @@
     
     function scoreSchedule(sections) {
         let score = 100;
-        let breakdown = {
-            timePreference: 0,
-            dayPreference: 0,
-            seatAvailability: 0,
-            gapTime: 0,
-            friday: 0,
-            extreme: 0
-        };
-        
-        const meetings = sections
-            .map(s => s.meetingsFaculty && s.meetingsFaculty[0]?.meetingTime)
-            .filter(m => m && m.beginTime && m.endTime && parseTime(m.beginTime) > 0);
-        
+        let breakdown = { timePreference: 0, dayPreference: 0, seatAvailability: 0, gapTime: 0, friday: 0, extreme: 0 };
+        const meetings = sections.map(s => s.meetingsFaculty && s.meetingsFaculty[0]?.meetingTime).filter(m => m && m.beginTime && m.endTime && parseTime(m.beginTime) > 0);
         if (meetings.length === 0) return { score: 75, breakdown };
-        
         const times = meetings.map(m => parseTime(m.beginTime));
         const endTimes = meetings.map(m => parseTime(m.endTime));
-        
         const earliestStart = Math.min(...times);
         const latestEnd = Math.max(...endTimes);
         
-        // Schedule type bonuses
         if (scheduleType === 'early') {
             if (earliestStart <= 480) { score += 15; breakdown.timePreference += 15; }
             else if (earliestStart <= 540) { score += 8; breakdown.timePreference += 8; }
@@ -1145,9 +1103,7 @@
             if (latestEnd >= 900) { score += 5; breakdown.timePreference += 5; }
         } else if (scheduleType === 'compact') {
             const totalSpan = latestEnd - earliestStart;
-            const totalClassTime = meetings.reduce((sum, m) => {
-                return sum + (parseTime(m.endTime) - parseTime(m.beginTime));
-            }, 0);
+            const totalClassTime = meetings.reduce((sum, m) => sum + (parseTime(m.endTime) - parseTime(m.beginTime)), 0);
             const gapTime = totalSpan - totalClassTime;
             if (gapTime <= 60) { score += 25; breakdown.gapTime += 25; }
             else if (gapTime <= 120) { score += 15; breakdown.gapTime += 15; }
@@ -1176,7 +1132,6 @@
             if (totalSpan >= 300 && totalSpan <= 420) { score += 8; breakdown.gapTime += 8; }
         }
         
-        // Seat availability bonus
         sections.forEach(section => {
             if (section.seatsAvailable > 10) { score += 8; breakdown.seatAvailability += 8; }
             else if (section.seatsAvailable > 5) { score += 4; breakdown.seatAvailability += 4; }
@@ -1184,54 +1139,31 @@
             else { score -= 25; breakdown.seatAvailability -= 25; }
         });
         
-        // Friday bonus
         const hasFriday = meetings.some(m => m.friday);
-        if (!hasFriday && meetings.length > 1) { 
-            score += 10; 
-            breakdown.friday += 10; 
-        }
-        
-        // Penalize extreme times
+        if (!hasFriday && meetings.length > 1) { score += 10; breakdown.friday += 10; }
         if (earliestStart < 480) { score -= 8; breakdown.extreme -= 8; }
         if (latestEnd > 1020) { score -= 8; breakdown.extreme -= 8; }
         
-        return { 
-            score: Math.max(0, Math.min(100, Math.round(score))),
-            breakdown
-        };
+        return { score: Math.max(0, Math.min(100, Math.round(score))), breakdown };
     }
     
     function getScheduleHash(sections) {
-        return sections
-            .map(s => `${s.subject}-${s.courseNumber}-${s.sequenceNumber}`)
-            .sort()
-            .join('|');
+        return sections.map(s => `${s.subject}-${s.courseNumber}-${s.sequenceNumber}`).sort().join('|');
     }
     
     async function generateSchedules() {
         loadingOverlay.classList.remove('hidden');
-        
         incrementScheduleCount();
-        
         if (typeof gtag !== 'undefined') {
-            gtag('event', 'generate_schedule', {
-                'event_category': 'engagement',
-                'event_label': 'Schedule Generated',
-                'value': selectedCourses.length
-            });
+            gtag('event', 'generate_schedule', { 'event_category': 'engagement', 'event_label': 'Schedule Generated', 'value': selectedCourses.length });
         }
-        
         try {
             const courseSections = {};
             for (const courseCode of selectedCourses) {
                 const parts = courseCode.split(' ');
                 const subject = parts[0];
                 const courseNumber = parts[1];
-                const sections = allCoursesData.filter(course =>
-                    course.subject === subject &&
-                    course.courseNumber === courseNumber &&
-                    canEnrollInSection(course)
-                );
+                const sections = allCoursesData.filter(course => course.subject === subject && course.courseNumber === courseNumber && canEnrollInSection(course));
                 if (sections.length === 0) {
                     alert(`No available sections found for ${courseCode}. Check if you need Honors or RiSE access.`);
                     loadingOverlay.classList.add('hidden');
@@ -1245,33 +1177,15 @@
                 loadingOverlay.classList.add('hidden');
                 return;
             }
-            
             const uniqueSchedules = new Map();
-            
             allSchedules.forEach(sections => {
                 const hash = getScheduleHash(sections);
-                if (!uniqueSchedules.has(hash)) {
-                    uniqueSchedules.set(hash, sections);
-                }
+                if (!uniqueSchedules.has(hash)) uniqueSchedules.set(hash, sections);
             });
-            
-            generatedSchedules = Array.from(uniqueSchedules.values())
-                .map((sections, idx) => {
-                    const scoreResult = scoreSchedule(sections);
-                    return {
-                        id: idx + 1,
-                        sections,
-                        score: scoreResult.score,
-                        breakdown: scoreResult.breakdown
-                    };
-                })
-                .sort((a, b) => b.score - a.score)
-                .slice(0, 10)
-                .map((schedule, idx) => ({
-                    ...schedule,
-                    id: idx + 1
-                }));
-            
+            generatedSchedules = Array.from(uniqueSchedules.values()).map((sections, idx) => {
+                const scoreResult = scoreSchedule(sections);
+                return { id: idx + 1, sections, score: scoreResult.score, breakdown: scoreResult.breakdown };
+            }).sort((a, b) => b.score - a.score).slice(0, 10).map((schedule, idx) => ({ ...schedule, id: idx + 1 }));
             loadingOverlay.classList.add('hidden');
             renderSchedules();
         } catch (error) {
@@ -1285,12 +1199,9 @@
         const courseKeys = Object.keys(courseSections);
         const combinations = [];
         const maxCombinations = 5000;
-        
         function backtrack(index, currentSchedule) {
             if (index === courseKeys.length) {
-                if (isValidLinkedSchedule(currentSchedule)) {
-                    combinations.push([...currentSchedule]);
-                }
+                if (isValidLinkedSchedule(currentSchedule)) combinations.push([...currentSchedule]);
                 return;
             }
             const courseKey = courseKeys[index];
@@ -1311,28 +1222,17 @@
     function hasTimeConflict(schedule, newSection) {
         const newMeeting = newSection.meetingsFaculty && newSection.meetingsFaculty[0]?.meetingTime;
         if (!newMeeting || !newMeeting.beginTime || !newMeeting.endTime) return false;
-        
         const newStart = parseTime(newMeeting.beginTime);
         const newEnd = parseTime(newMeeting.endTime);
         if (newStart === 0 || newEnd === 0) return false;
-        
         for (const section of schedule) {
             const meeting = section.meetingsFaculty && section.meetingsFaculty[0]?.meetingTime;
             if (!meeting || !meeting.beginTime || !meeting.endTime) continue;
-            
             const start = parseTime(meeting.beginTime);
             const end = parseTime(meeting.endTime);
             if (start === 0 || end === 0) continue;
-            
-            const sharedDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].some(day => 
-                meeting[day] && newMeeting[day]
-            );
-            
-            if (sharedDays) {
-                if ((start < newEnd && end > newStart)) {
-                    return true;
-                }
-            }
+            const sharedDays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'].some(day => meeting[day] && newMeeting[day]);
+            if (sharedDays && (start < newEnd && end > newStart)) return true;
         }
         return false;
     }
@@ -1353,12 +1253,8 @@
     
     function getSectionBadges(section) {
         const badges = [];
-        if (hasAttribute(section, 'HONR')) {
-            badges.push('<span class="special-badge badge-honors">HONORS</span>');
-        }
-        if (isRiseOnly(section)) {
-            badges.push('<span class="special-badge badge-rise">RiSE</span>');
-        }
+        if (hasAttribute(section, 'HONR')) badges.push('<span class="special-badge badge-honors">HONORS</span>');
+        if (isRiseOnly(section)) badges.push('<span class="special-badge badge-rise">RiSE</span>');
         return badges.join('');
     }
     
@@ -1366,7 +1262,6 @@
         const calendarView = document.getElementById(`calendar-${scheduleId}`);
         const listView = document.getElementById(`list-${scheduleId}`);
         const toggleBtn = document.getElementById(`toggle-${scheduleId}`);
-        
         if (listView.classList.contains('active')) {
             listView.classList.remove('active');
             calendarView.style.display = 'block';
@@ -1381,12 +1276,19 @@
     function renderCalendar(sections, scheduleId) {
         const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
         const timeSlots = [];
-        
         for (let hour = 7; hour <= 21; hour++) {
             const displayHour = hour > 12 ? hour - 12 : hour;
             const ampm = hour >= 12 ? 'PM' : 'AM';
-            timeSlots.push({
-                time: `${displayHour}:00 ${ampm}`,
-                minutes: hour * 60
-            });
+            timeSlots.push({ time: `${displayHour}:00 ${ampm}`, minutes: hour * 60 });
         }
+        let calendarHTML = '<div class="calendar-container"><div class="calendar-grid">';
+        calendarHTML += '<div style="grid-column: 1; grid-row: 1; border-right: 2px solid #e5e7eb; background: white;"></div>';
+        days.forEach((day, index) => {
+            calendarHTML += `<div class="day-header" style="grid-column: ${index + 2}; grid-row: 1;">${day}</div>`;
+        });
+        timeSlots.forEach((slot, index) => {
+            calendarHTML += `<div class="time-slot" style="grid-column: 1; grid-row: ${index + 2};">${slot.time}</div>`;
+        });
+        days.forEach((day, dayIndex) => {
+            calendarHTML += `<div class="day-column" style="grid-column: ${dayIndex + 2}; grid-row: 2 / ${timeSlots.length + 2};">`;
+            calendarHTML += '<div class="time
