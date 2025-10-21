@@ -598,7 +598,7 @@
         <div id="schedulesSection" class="hidden">
             <h2>Generated Schedules</h2>
             <div id="schedulesList"></div>
-            <button id="loadMoreBtn" class="btn-load-more hidden">
+            <button id="loadMoreBtn" class="btn-load-more">
                 <i class="fas fa-plus-circle"></i> Generate More Schedules
             </button>
         </div>
@@ -731,7 +731,20 @@
         allSchedulesPool = [];
         currentDisplayCount = 20;
         schedulesSection.classList.add('hidden');
-        loadMoreBtn.classList.add('hidden');
+        updateLoadMoreButton();
+    }
+    
+    function updateLoadMoreButton() {
+        if (allSchedulesPool.length === 0) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<i class="fas fa-plus-circle"></i> Generate More Schedules';
+        } else if (currentDisplayCount >= allSchedulesPool.length) {
+            loadMoreBtn.disabled = true;
+            loadMoreBtn.innerHTML = '<i class="fas fa-check-circle"></i> All Schedules Displayed';
+        } else {
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.innerHTML = `<i class="fas fa-plus-circle"></i> Generate More Schedules (${allSchedulesPool.length - currentDisplayCount} remaining)`;
+        }
     }
     
     function hasAttribute(section, attributeCode) {
@@ -1162,13 +1175,12 @@
             "Checking time conflicts...",
             "Calculating optimal schedules...",
             "Applying preferences...",
-            "Scoring schedules...",
-            "Almost done..."
+            "Scoring schedules..."
         ];
         
         for (let i = 0; i < messages.length; i++) {
             loadingProgress.textContent = messages[i];
-            await sleep(400);
+            await sleep(250);
         }
     }
     
@@ -1208,7 +1220,7 @@
                 courseSections[courseCode] = sections;
             }
             
-            await sleep(200);
+            await sleep(100);
             
             const allSchedules = generateCombinations(courseSections);
             if (allSchedules.length === 0) {
@@ -1300,19 +1312,14 @@
             }));
             
             await progressPromise;
-            await sleep(300);
+            await sleep(200);
             
             currentDisplayCount = 20;
             generatedSchedules = allSchedulesPool.slice(0, currentDisplayCount);
             
             loadingOverlay.classList.add('hidden');
             renderSchedules();
-            
-            if (allSchedulesPool.length > currentDisplayCount) {
-                loadMoreBtn.classList.remove('hidden');
-            } else {
-                loadMoreBtn.classList.add('hidden');
-            }
+            updateLoadMoreButton();
         } catch (error) {
             console.error('Error generating schedules:', error);
             await progressPromise;
@@ -1322,24 +1329,21 @@
     }
     
     async function loadMoreSchedules() {
+        if (currentDisplayCount >= allSchedulesPool.length) return;
+        
         loadMoreBtn.disabled = true;
         loadingOverlay.classList.remove('hidden');
         loadingText.textContent = 'Generating More Schedules...';
         loadingProgress.textContent = 'Finding additional options...';
         
-        await sleep(800);
+        await sleep(500);
         
         currentDisplayCount += SCHEDULES_PER_LOAD;
         generatedSchedules = allSchedulesPool.slice(0, currentDisplayCount);
         
         loadingOverlay.classList.add('hidden');
         renderSchedules();
-        
-        if (currentDisplayCount >= allSchedulesPool.length) {
-            loadMoreBtn.classList.add('hidden');
-        } else {
-            loadMoreBtn.disabled = false;
-        }
+        updateLoadMoreButton();
     }
     
     function generateCombinations(courseSections) {
@@ -1352,8 +1356,7 @@
                 if (isValidLinkedSchedule(currentSchedule)) {
                     combinations.push([...currentSchedule]);
                 }
-                return;
-            }
+                return;            }
             const courseKey = courseKeys[index];
             const sections = courseSections[courseKey];
             for (const section of sections) {
