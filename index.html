@@ -150,6 +150,31 @@
         }
         .btn-generate:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(245, 102, 0, 0.4); }
         .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+        .btn-load-more {
+            width: 100%;
+            background: linear-gradient(135deg, #522d80 0%, #f56600 100%);
+            color: white;
+            border: none;
+            padding: 1rem;
+            font-size: 1.125rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-top: 2rem;
+            box-shadow: 0 4px 15px rgba(82, 45, 128, 0.3);
+        }
+        .btn-load-more:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(82, 45, 128, 0.5);
+        }
+        .btn-load-more:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         .course-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
         .course-tag {
             background: #f56600; color: white; padding: 0.5rem 1rem;
@@ -351,7 +376,7 @@
         .ready-card h3 { color: #522d80; margin-bottom: 0.5rem; }
         .ready-card p { color: #f56600; font-weight: 600; }
         .loading-overlay {
-            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(82, 45, 128, 0.9);
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(82, 45, 128, 0.95);
             display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 1000;
         }
         .spinner {
@@ -359,7 +384,17 @@
             border-top-color: #f56600; animation: spin 1s linear infinite; border-radius: 50%;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loading-overlay p { color: white; font-size: 1.25rem; font-weight: 600; margin-top: 1rem; }
+        .loading-overlay p { 
+            color: white; 
+            font-size: 1.25rem; 
+            font-weight: 600; 
+            margin-top: 1rem; 
+        }
+        .loading-progress {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
         .hidden { display: none !important; }
         #schedulesSection h2 { font-size: 1.75rem; color: white; margin-bottom: 1.5rem; text-align: center; }
         .credit {
@@ -563,6 +598,9 @@
         <div id="schedulesSection" class="hidden">
             <h2>Generated Schedules</h2>
             <div id="schedulesList"></div>
+            <button id="loadMoreBtn" class="btn-load-more hidden">
+                <i class="fas fa-plus-circle"></i> Generate More Schedules
+            </button>
         </div>
         <div id="readySection" class="ready-card hidden">
             <i class="fas fa-info-circle"></i>
@@ -587,16 +625,20 @@
     
     <div id="loadingOverlay" class="loading-overlay hidden">
         <div class="spinner"></div>
-        <p>Generating Schedules...</p>
+        <p id="loadingText">Generating Schedules...</p>
+        <p class="loading-progress" id="loadingProgress"></p>
     </div>
     <script>
     let selectedCourses = [];
     let linkedCourses = [];
     let scheduleType = 'balanced';
     let generatedSchedules = [];
+    let allSchedulesPool = [];
     let allCoursesData = [];
     let isHonors = false;
     let isRise = false;
+    let currentDisplayCount = 20;
+    const SCHEDULES_PER_LOAD = 10;
     
     const courseInput = document.getElementById('courseInput');
     const addCourseBtn = document.getElementById('addCourseBtn');
@@ -610,8 +652,11 @@
     const schedulesList = document.getElementById('schedulesList');
     const readySection = document.getElementById('readySection');
     const loadingOverlay = document.getElementById('loadingOverlay');
+    const loadingText = document.getElementById('loadingText');
+    const loadingProgress = document.getElementById('loadingProgress');
     const honorsCheckbox = document.getElementById('honorsCheckbox');
     const riseCheckbox = document.getElementById('riseCheckbox');
+    const loadMoreBtn = document.getElementById('loadMoreBtn');
     
     function loadVisitorCount() {
         const STORAGE_KEY = 'cuSchedulerCount';
@@ -659,14 +704,12 @@
     
     honorsCheckbox.addEventListener('change', (e) => {
         isHonors = e.target.checked;
-        generatedSchedules = [];
-        schedulesSection.classList.add('hidden');
+        resetSchedules();
     });
     
     riseCheckbox.addEventListener('change', (e) => {
         isRise = e.target.checked;
-        generatedSchedules = [];
-        schedulesSection.classList.add('hidden');
+        resetSchedules();
     });
     
     addCourseBtn.addEventListener('click', () => addCourse());
@@ -677,11 +720,19 @@
             scheduleTypes.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             scheduleType = btn.dataset.type;
-            generatedSchedules = [];
-            schedulesSection.classList.add('hidden');
+            resetSchedules();
         });
     });
     generateBtn.addEventListener('click', generateSchedules);
+    loadMoreBtn.addEventListener('click', loadMoreSchedules);
+    
+    function resetSchedules() {
+        generatedSchedules = [];
+        allSchedulesPool = [];
+        currentDisplayCount = 20;
+        schedulesSection.classList.add('hidden');
+        loadMoreBtn.classList.add('hidden');
+    }
     
     function hasAttribute(section, attributeCode) {
         if (!section.sectionAttributes || !Array.isArray(section.sectionAttributes)) return false;
@@ -729,8 +780,7 @@
             courseInput.value = '';
             renderSelectedCourses();
             updateGenerateButton();
-            generatedSchedules = [];
-            schedulesSection.classList.add('hidden');
+            resetSchedules();
         } else {
             alert(`Course "${formattedCode}" is already added.`);
         }
@@ -742,8 +792,7 @@
         renderSelectedCourses();
         renderLinkedCourses();
         updateGenerateButton();
-        generatedSchedules = [];
-        schedulesSection.classList.add('hidden');
+        resetSchedules();
     }
     
     function renderSelectedCourses() {
@@ -774,8 +823,7 @@
     function removeLinkedGroup(id) {
         linkedCourses = linkedCourses.filter(link => link.id !== id);
         renderLinkedCourses();
-        generatedSchedules = [];
-        schedulesSection.classList.add('hidden');
+        resetSchedules();
     }
     
     function addCourseToLink(linkId, course) {
@@ -783,8 +831,7 @@
         if (link && !link.courses.includes(course)) {
             link.courses.push(course);
             renderLinkedCourses();
-            generatedSchedules = [];
-            schedulesSection.classList.add('hidden');
+            resetSchedules();
         }
     }
     
@@ -793,8 +840,7 @@
         if (link) {
             link.courses = link.courses.filter(c => c !== course);
             renderLinkedCourses();
-            generatedSchedules = [];
-            schedulesSection.classList.add('hidden');
+            resetSchedules();
         }
     }
     
@@ -915,34 +961,27 @@
         });
         
         if (scheduleType === 'early') {
-            // Count 8 AM classes
             const eightAMCount = times.filter(t => t === 480).length;
             const totalClasses = times.length;
             
-            // MASSIVE bonus for having all classes at 8 AM
             if (eightAMCount === totalClasses) {
-                score += 100; // Guaranteed top score
+                score += 100;
             } else {
-                // Huge per-class bonus for 8 AM
                 score += eightAMCount * 40;
-                // Penalize non-8 AM classes heavily
                 const nonEightAMCount = totalClasses - eightAMCount;
                 score -= nonEightAMCount * 25;
             }
             
-            // Bonus for early overall start
             if (earliestStart === 480) score += 20;
-            else if (earliestStart === 510) score += 10; // 8:30
-            else if (earliestStart > 540) score -= 40; // After 9 AM is very bad
+            else if (earliestStart === 510) score += 10;
+            else if (earliestStart > 540) score -= 40;
             
-            // Reward early ending
-            if (latestEnd <= 720) score += 40; // Before noon
-            else if (latestEnd <= 780) score += 30; // Before 1 PM
-            else if (latestEnd <= 840) score += 20; // Before 2 PM
-            else if (latestEnd <= 900) score += 10; // Before 3 PM
-            else if (latestEnd > 960) score -= 35; // After 4 PM is terrible
+            if (latestEnd <= 720) score += 40;
+            else if (latestEnd <= 780) score += 30;
+            else if (latestEnd <= 840) score += 20;
+            else if (latestEnd <= 900) score += 10;
+            else if (latestEnd > 960) score -= 35;
             
-            // Slight penalty for large gaps
             if (gapTime > 180) score -= 10;
             
         } else if (scheduleType === 'late') {
@@ -1113,8 +1152,30 @@
         return diversityScore;
     }
     
+    function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    async function showLoadingProgress() {
+        const messages = [
+            "Analyzing course sections...",
+            "Checking time conflicts...",
+            "Calculating optimal schedules...",
+            "Applying preferences...",
+            "Scoring schedules...",
+            "Almost done..."
+        ];
+        
+        for (let i = 0; i < messages.length; i++) {
+            loadingProgress.textContent = messages[i];
+            await sleep(400);
+        }
+    }
+    
     async function generateSchedules() {
         loadingOverlay.classList.remove('hidden');
+        loadingText.textContent = 'Generating Schedules...';
+        loadingProgress.textContent = 'Starting...';
         incrementScheduleCount();
         
         if (typeof gtag !== 'undefined') {
@@ -1124,6 +1185,8 @@
                 'value': selectedCourses.length
             });
         }
+        
+        const progressPromise = showLoadingProgress();
         
         try {
             const courseSections = {};
@@ -1137,6 +1200,7 @@
                     canEnrollInSection(course)
                 );
                 if (sections.length === 0) {
+                    await progressPromise;
                     alert(`No available sections found for ${courseCode}. Check if you need Honors or RiSE access.`);
                     loadingOverlay.classList.add('hidden');
                     return;
@@ -1144,8 +1208,11 @@
                 courseSections[courseCode] = sections;
             }
             
+            await sleep(200);
+            
             const allSchedules = generateCombinations(courseSections);
             if (allSchedules.length === 0) {
+                await progressPromise;
                 alert('No valid schedules found. Try adjusting your course selections or preferences.');
                 loadingOverlay.classList.add('hidden');
                 return;
@@ -1185,7 +1252,6 @@
                 }
             }
             
-            // For early bird, prioritize all-8AM schedules
             if (scheduleType === 'early') {
                 const all8AMSchedules = scheduleArray.filter(sections => {
                     const meetings = sections
@@ -1198,7 +1264,6 @@
                 });
                 
                 if (all8AMSchedules.length > 0) {
-                    // Prioritize all-8AM schedules
                     scheduleArray = all8AMSchedules.concat(
                         scheduleArray.filter(s => !all8AMSchedules.includes(s))
                     );
@@ -1214,35 +1279,66 @@
             
             scoredSchedules.sort((a, b) => b.score - a.score);
             
-            generatedSchedules = [];
+            allSchedulesPool = [];
             for (const schedule of scoredSchedules) {
-                if (generatedSchedules.length >= 20) break;
-                
-                const diversityScore = getScheduleDiversity(schedule, generatedSchedules);
+                const diversityScore = getScheduleDiversity(schedule, allSchedulesPool);
                 schedule.diversityScore = diversityScore;
                 schedule.finalScore = schedule.score + diversityScore;
                 
-                if (generatedSchedules.length < 5 || diversityScore > -15) {
-                    generatedSchedules.push(schedule);
+                if (allSchedulesPool.length < 5 || diversityScore > -15) {
+                    allSchedulesPool.push(schedule);
                 }
             }
             
-            generatedSchedules.sort((a, b) => b.finalScore - a.finalScore);
+            allSchedulesPool.sort((a, b) => b.finalScore - a.finalScore);
             
-            // Normalize scores to 0-100 range for display
-            const maxScore = generatedSchedules.length > 0 ? generatedSchedules[0].finalScore : 100;
-            generatedSchedules = generatedSchedules.map((schedule, idx) => ({
+            const maxScore = allSchedulesPool.length > 0 ? allSchedulesPool[0].finalScore : 100;
+            allSchedulesPool = allSchedulesPool.map((schedule, idx) => ({
                 ...schedule,
                 displayScore: Math.round((schedule.finalScore / maxScore) * 100),
                 id: idx + 1
             }));
             
+            await progressPromise;
+            await sleep(300);
+            
+            currentDisplayCount = 20;
+            generatedSchedules = allSchedulesPool.slice(0, currentDisplayCount);
+            
             loadingOverlay.classList.add('hidden');
             renderSchedules();
+            
+            if (allSchedulesPool.length > currentDisplayCount) {
+                loadMoreBtn.classList.remove('hidden');
+            } else {
+                loadMoreBtn.classList.add('hidden');
+            }
         } catch (error) {
             console.error('Error generating schedules:', error);
+            await progressPromise;
             alert('An error occurred while generating schedules. Please try again.');
             loadingOverlay.classList.add('hidden');
+        }
+    }
+    
+    async function loadMoreSchedules() {
+        loadMoreBtn.disabled = true;
+        loadingOverlay.classList.remove('hidden');
+        loadingText.textContent = 'Generating More Schedules...';
+        loadingProgress.textContent = 'Finding additional options...';
+        
+        await sleep(800);
+        
+        currentDisplayCount += SCHEDULES_PER_LOAD;
+        generatedSchedules = allSchedulesPool.slice(0, currentDisplayCount);
+        
+        loadingOverlay.classList.add('hidden');
+        renderSchedules();
+        
+        if (currentDisplayCount >= allSchedulesPool.length) {
+            loadMoreBtn.classList.add('hidden');
+        } else {
+            loadMoreBtn.disabled = false;
         }
     }
     
@@ -1477,6 +1573,8 @@
                 </div>
             `;
         }).join('');
+        
+        schedulesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
     
     function exportSchedule(scheduleId) {
