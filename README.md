@@ -34,7 +34,6 @@ Run locally:
 
 3. Open `index.html` in your web browser.
 
-No build tools or server required — just static files.
 
 ## Usage
 
@@ -45,7 +44,7 @@ No build tools or server required — just static files.
 5. Click "Generate Schedules". The app will produce up to the top-ranked schedule options.
 6. Toggle between calendar and list views, or export a schedule as a text file.
 
-## Notes on Recent Fixes (what changed)
+## Notes on Recent Fixes
 - Fixed a bug where changing schedule preference would only re-score existing schedules instead of fully regenerating them. Now changing preferences, special program toggles, adding/removing courses, or editing linked groups will clear previous results so schedules are regenerated correctly.
 - Added deduplication using a schedule hash so duplicate schedule combinations are removed.
 - Improved scoring logic to better reflect user preferences and seat availability; schedules should now rank more sensibly.
