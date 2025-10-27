@@ -3,9 +3,10 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  width: 100%;
 }
 
-/* Clemson paw print pattern background accent */
+/* Enhanced Clemson paw print pattern background accent */
 #root::before {
   content: '';
   position: fixed;
@@ -13,46 +14,132 @@
   left: 0;
   width: 100%;
   height: 100%;
-  opacity: 0.03;
+  opacity: 0.04;
   background-image: 
-    radial-gradient(circle at 20% 30%, var(--clemson-purple) 2px, transparent 2px),
-    radial-gradient(circle at 80% 70%, var(--clemson-orange) 2px, transparent 2px);
-  background-size: 100px 100px;
+    radial-gradient(circle at 15% 20%, var(--clemson-purple) 3px, transparent 3px),
+    radial-gradient(circle at 85% 80%, var(--clemson-orange) 3px, transparent 3px),
+    radial-gradient(circle at 35% 65%, var(--clemson-purple) 2px, transparent 2px),
+    radial-gradient(circle at 65% 35%, var(--clemson-orange) 2px, transparent 2px),
+    radial-gradient(circle at 50% 50%, var(--clemson-purple) 2.5px, transparent 2.5px);
+  background-size: 120px 120px;
   pointer-events: none;
   z-index: -1;
+  animation: float 20s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) translateX(0px);
+  }
+  50% {
+    transform: translateY(-20px) translateX(10px);
+  }
 }
 
 .logo {
   height: 6em;
   padding: 1.5em;
   will-change: filter;
-  transition: filter 300ms;
+  transition: filter 300ms, transform 300ms;
 }
+
 .logo:hover {
-  filter: drop-shadow(0 0 2em var(--clemson-orange));
+  filter: drop-shadow(0 0 2em var(--clemson-orange)) drop-shadow(0 0 1em var(--clemson-purple));
+  transform: scale(1.1) rotate(5deg);
 }
 
 .card {
   padding: 2em;
-  background: var(--clemson-white);
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(82, 45, 128, 0.1);
-  border: 1px solid var(--clemson-gray);
-  transition: box-shadow 0.3s ease;
+  background: linear-gradient(135deg, var(--clemson-white) 0%, #FFF8F5 100%);
+  border-radius: 16px;
+  box-shadow: 
+    0 8px 24px rgba(82, 45, 128, 0.12), 
+    0 4px 8px rgba(246, 103, 51, 0.08);
+  border: 2px solid transparent;
+  border-image: linear-gradient(135deg, var(--clemson-orange) 0%, var(--clemson-purple) 100%);
+  border-image-slice: 1;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%,
+    rgba(246, 103, 51, 0.1) 50%,
+    transparent 100%);
+  transition: left 0.5s ease;
+}
+
+.card:hover::before {
+  left: 100%;
 }
 
 .card:hover {
-  box-shadow: 0 6px 12px rgba(82, 45, 128, 0.15);
+  box-shadow: 
+    0 12px 36px rgba(82, 45, 128, 0.18), 
+    0 6px 12px rgba(246, 103, 51, 0.12),
+    0 0 40px rgba(246, 103, 51, 0.1);
+  transform: translateY(-4px);
+  border-color: var(--clemson-orange);
 }
 
 .read-the-docs {
   color: var(--clemson-gray-dark);
+  transition: color 0.3s ease;
 }
 
-/* Clemson accent stripe */
+.read-the-docs:hover {
+  color: var(--clemson-orange);
+}
+
+/* Clemson accent stripe with enhanced animation */
 .clemson-stripe {
-  height: 4px;
-  background: linear-gradient(90deg, var(--clemson-purple) 0%, var(--clemson-orange) 100%);
+  height: 6px;
+  background: linear-gradient(90deg, 
+    var(--clemson-purple) 0%, 
+    var(--clemson-orange) 25%,
+    var(--clemson-purple) 50%,
+    var(--clemson-orange) 75%,
+    var(--clemson-purple) 100%);
+  background-size: 200% 100%;
   margin: 1rem 0;
-  border-radius: 2px;
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(246, 103, 51, 0.3), 0 0 15px rgba(82, 45, 128, 0.2);
+  animation: gradient 4s ease infinite;
+}
+
+/* Tiger paw decorative element */
+.tiger-paw {
+  width: 50px;
+  height: 50px;
+  background: radial-gradient(circle at 30% 30%, var(--clemson-orange) 8px, transparent 8px),
+              radial-gradient(circle at 70% 30%, var(--clemson-orange) 6px, transparent 6px),
+              radial-gradient(circle at 30% 70%, var(--clemson-orange) 6px, transparent 6px),
+              radial-gradient(circle at 70% 70%, var(--clemson-orange) 6px, transparent 6px),
+              radial-gradient(circle at 50% 50%, var(--clemson-orange) 12px, transparent 12px);
+  opacity: 0.2;
+  transition: all 0.3s ease;
+}
+
+.tiger-paw:hover {
+  opacity: 0.6;
+  transform: scale(1.2) rotate(15deg);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  #root {
+    padding: 1rem;
+  }
+  
+  .card {
+    padding: 1.5em;
+  }
 }
