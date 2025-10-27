@@ -1,260 +1,37 @@
-/* Clemson University Theme Styles */
+/* Simplified Clemson Styles - matching original design */
 
-/* Clemson color variables are in index.css */
-
-/* Enhanced card styling with Tiger theme */
-.clemson-card {
-  background: linear-gradient(135deg, white 0%, #FFF5F0 100%);
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(82, 45, 128, 0.12), 0 4px 8px rgba(246, 103, 51, 0.08);
-  border: 2px solid transparent;
-  background-clip: padding-box;
-  position: relative;
-  transition: all 0.3s ease;
-  overflow: hidden;
-}
-
-.clemson-card::before {
-  content: '';
-  position: absolute;
+.loading-overlay {
+  position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, var(--clemson-purple) 0%, var(--clemson-orange) 50%, var(--clemson-purple) 100%);
-  background-size: 200% 100%;
-  animation: gradient 3s ease infinite;
+  bottom: 0;
+  background: rgba(82, 45, 128, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
-.clemson-card:hover {
-  box-shadow: 0 12px 36px rgba(82, 45, 128, 0.18), 0 6px 12px rgba(246, 103, 51, 0.12);
-  transform: translateY(-4px);
-  border-color: var(--clemson-orange-light);
-}
-
-/* Clemson accent stripe with animation */
-.clemson-stripe {
-  height: 6px;
-  background: linear-gradient(90deg, 
-    var(--clemson-purple) 0%, 
-    var(--clemson-orange) 25%,
-    var(--clemson-purple) 50%,
-    var(--clemson-orange) 75%,
-    var(--clemson-purple) 100%);
-  background-size: 200% 100%;
-  margin: 0 0 1.5rem 0;
-  border-radius: 3px;
-  box-shadow: 0 2px 8px rgba(246, 103, 51, 0.3);
-  animation: gradient 4s ease infinite;
-}
-
-/* Tiger Paw Pattern */
-.tiger-paw-pattern {
-  background-image: 
-    radial-gradient(circle at 25% 25%, var(--clemson-orange) 2px, transparent 2px),
-    radial-gradient(circle at 75% 75%, var(--clemson-purple) 2px, transparent 2px),
-    radial-gradient(circle at 25% 75%, var(--clemson-orange) 1.5px, transparent 1.5px),
-    radial-gradient(circle at 75% 25%, var(--clemson-purple) 1.5px, transparent 1.5px);
-  background-size: 100px 100px;
-  opacity: 0.05;
-}
-
-/* Clemson button variants */
-.btn-clemson-primary {
-  background: linear-gradient(135deg, var(--clemson-orange) 0%, var(--clemson-orange-dark) 100%);
-  color: var(--clemson-white);
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(246, 103, 51, 0.4);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-clemson-primary::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
+.spinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid rgba(245, 102, 0, 0.3);
+  border-top-color: #f56600;
+  animation: spin 1s linear infinite;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.5s, height 0.5s;
 }
 
-.btn-clemson-primary:hover::after {
-  width: 300px;
-  height: 300px;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
-.btn-clemson-primary:hover {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 24px rgba(246, 103, 51, 0.5), 0 0 30px rgba(246, 103, 51, 0.3);
-}
-
-.btn-clemson-secondary {
-  background: linear-gradient(135deg, var(--clemson-purple) 0%, var(--clemson-purple-dark) 100%);
-  color: var(--clemson-white);
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(82, 45, 128, 0.4);
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-clemson-secondary::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.5s, height 0.5s;
-}
-
-.btn-clemson-secondary:hover::after {
-  width: 300px;
-  height: 300px;
-}
-
-.btn-clemson-secondary:hover {
-  transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 24px rgba(82, 45, 128, 0.5), 0 0 30px rgba(82, 45, 128, 0.3);
-}
-
-/* Clemson badge with glow */
-.clemson-badge {
-  background: linear-gradient(135deg, var(--clemson-orange-light) 0%, var(--clemson-orange) 100%);
-  color: var(--clemson-white);
-  padding: 0.75rem 1.5rem;
-  border-radius: 24px;
-  font-weight: 700;
-  font-size: 0.9rem;
-  box-shadow: 0 4px 12px rgba(246, 103, 51, 0.3);
-  display: inline-block;
-  transition: all 0.3s ease;
-}
-
-.clemson-badge:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 18px rgba(246, 103, 51, 0.4), 0 0 20px rgba(246, 103, 51, 0.2);
-}
-
-/* Clemson input focus with glow */
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: var(--clemson-orange) !important;
-  box-shadow: 0 0 0 4px rgba(246, 103, 51, 0.2), 0 0 20px rgba(246, 103, 51, 0.15) !important;
-}
-
-/* Clemson link styles */
-a.clemson-link {
-  color: var(--clemson-orange);
-  text-decoration: none;
-  border-bottom: 2px solid transparent;
-  transition: all 0.3s ease;
+.loading-overlay p {
+  color: white;
+  font-size: 1.25rem;
   font-weight: 600;
-  position: relative;
-}
-
-a.clemson-link::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--clemson-orange) 0%, var(--clemson-purple) 100%);
-  transition: width 0.3s ease;
-}
-
-a.clemson-link:hover::after {
-  width: 100%;
-}
-
-a.clemson-link:hover {
-  color: var(--clemson-orange-dark);
-}
-
-/* Tiger Stripe Divider */
-.tiger-stripe {
-  height: 8px;
-  background: repeating-linear-gradient(
-    45deg,
-    var(--clemson-orange),
-    var(--clemson-orange) 10px,
-    var(--clemson-purple) 10px,
-    var(--clemson-purple) 20px
-  );
-  border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Glow effect for important elements */
-.clemson-glow-orange {
-  box-shadow: 0 0 20px rgba(246, 103, 51, 0.4), 0 0 40px rgba(246, 103, 51, 0.2);
-}
-
-.clemson-glow-purple {
-  box-shadow: 0 0 20px rgba(82, 45, 128, 0.4), 0 0 40px rgba(82, 45, 128, 0.2);
-}
-
-/* Pulse animation for interactive elements */
-@keyframes pulse-orange {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(246, 103, 51, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 15px rgba(246, 103, 51, 0);
-  }
-}
-
-@keyframes pulse-purple {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(82, 45, 128, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 15px rgba(82, 45, 128, 0);
-  }
-}
-
-.pulse-orange {
-  animation: pulse-orange 2s infinite;
-}
-
-.pulse-purple {
-  animation: pulse-purple 2s infinite;
-}
-
-/* Shimmer effect */
-@keyframes shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
-  100% {
-    background-position: 1000px 0;
-  }
-}
-
-.clemson-shimmer {
-  background: linear-gradient(90deg, 
-    transparent 0%,
-    rgba(246, 103, 51, 0.1) 50%,
-    transparent 100%);
-  background-size: 1000px 100%;
-  animation: shimmer 3s infinite;
+  margin-top: 1rem;
 }

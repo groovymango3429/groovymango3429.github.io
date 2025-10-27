@@ -1,24 +1,22 @@
 :root {
   /* Clemson University Brand Colors */
-  --clemson-orange: #F66733;
-  --clemson-purple: #522D80;
-  --clemson-orange-light: #FF8A5B;
-  --clemson-purple-light: #6B3FA0;
-  --clemson-orange-dark: #D64D1F;
-  --clemson-purple-dark: #3D2160;
+  --clemson-orange: #f56600;
+  --clemson-purple: #522d80;
+  --clemson-orange-dark: #d45500;
+  --clemson-purple-dark: #3d2160;
   --clemson-white: #FFFFFF;
   --clemson-gray-light: #F5F5F5;
-  --clemson-gray: #E0E0E0;
-  --clemson-gray-dark: #424242;
-  --clemson-text-dark: #2D2D2D;
+  --clemson-gray: #d1d5db;
+  --clemson-gray-dark: #6b7280;
+  --clemson-text-dark: #1f2937;
 
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light;
   color: var(--clemson-text-dark);
-  background: linear-gradient(135deg, #FFF5F0 0%, #FFFFFF 50%, #F8F0FF 100%);
+  background: linear-gradient(135deg, #f56600 0%, #522d80 100%);
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -26,151 +24,54 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Gradient Animation */
-@keyframes gradient {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient 3s ease infinite;
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  padding: 1rem;
 }
 
 a {
   font-weight: 500;
   color: var(--clemson-orange);
-  text-decoration: inherit;
-  transition: color 0.3s ease;
+  text-decoration: none;
+  transition: color 0.2s;
 }
 
 a:hover {
   color: var(--clemson-orange-dark);
 }
 
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-  position: relative;
-  overflow-x: hidden;
-}
-
-/* Tiger Paw Background Pattern */
-body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.02;
-  background-image: 
-    radial-gradient(circle at 20% 30%, var(--clemson-purple) 3px, transparent 3px),
-    radial-gradient(circle at 80% 70%, var(--clemson-orange) 3px, transparent 3px),
-    radial-gradient(circle at 40% 60%, var(--clemson-purple) 2px, transparent 2px),
-    radial-gradient(circle at 60% 40%, var(--clemson-orange) 2px, transparent 2px);
-  background-size: 150px 150px;
-  pointer-events: none;
-  z-index: -1;
-}
-
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-  background: linear-gradient(135deg, var(--clemson-purple) 0%, var(--clemson-orange) 50%, var(--clemson-purple) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 700;
-  background-size: 200% 200%;
-}
-
 button {
-  border-radius: 12px;
-  border: 2px solid var(--clemson-orange);
-  padding: 0.8em 1.5em;
-  font-size: 1em;
-  font-weight: 700;
-  font-family: inherit;
-  background: linear-gradient(135deg, var(--clemson-orange) 0%, var(--clemson-orange-dark) 100%);
-  color: var(--clemson-white);
+  border: none;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(246, 103, 51, 0.3);
-  position: relative;
-  overflow: hidden;
-}
-
-button::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
-  transform: translate(-50%, -50%);
-  transition: width 0.6s, height 0.6s;
-}
-
-button:hover::before {
-  width: 300px;
-  height: 300px;
-}
-
-button:hover {
-  background: linear-gradient(135deg, var(--clemson-orange-dark) 0%, var(--clemson-purple) 100%);
-  border-color: var(--clemson-orange-dark);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(246, 103, 51, 0.4), 0 0 20px rgba(246, 103, 51, 0.3);
-}
-
-button:active {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(246, 103, 51, 0.3);
+  transition: all 0.2s;
+  font-family: inherit;
 }
 
 button:disabled {
-  background: linear-gradient(135deg, var(--clemson-gray) 0%, var(--clemson-gray-dark) 100%);
-  border-color: var(--clemson-gray);
-  color: var(--clemson-gray-dark);
+  opacity: 0.5;
   cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
 }
 
-button:focus,
-button:focus-visible {
-  outline: 4px solid var(--clemson-purple-light);
-  outline-offset: 3px;
-}
-
-/* Clemson themed inputs */
 input[type="text"],
 input[type="email"],
 input[type="number"],
 select,
 textarea {
   border: 2px solid var(--clemson-gray);
-  border-radius: 8px;
-  padding: 0.75em 1em;
+  padding: 0.75rem 1rem;
   font-family: inherit;
-  font-size: 1em;
-  transition: all 0.3s ease;
+  font-size: 1rem;
+  transition: all 0.2s;
   background-color: var(--clemson-white);
   color: var(--clemson-text-dark);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 input[type="text"]:focus,
@@ -180,30 +81,9 @@ select:focus,
 textarea:focus {
   outline: none;
   border-color: var(--clemson-orange);
-  box-shadow: 0 0 0 4px rgba(246, 103, 51, 0.15), 0 4px 12px rgba(246, 103, 51, 0.1);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 3px rgba(245, 102, 0, 0.1);
 }
 
-/* Custom Scrollbar */
-::-webkit-scrollbar {
-  width: 12px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--clemson-gray-light);
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, var(--clemson-orange) 0%, var(--clemson-purple) 100%);
-  border-radius: 6px;
-  border: 2px solid var(--clemson-gray-light);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, var(--clemson-orange-dark) 0%, var(--clemson-purple-dark) 100%);
-}
-
-/* Selection Color */
 ::selection {
   background: var(--clemson-orange);
   color: var(--clemson-white);

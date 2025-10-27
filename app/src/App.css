@@ -1,145 +1,409 @@
-#root {
-  max-width: 1280px;
+.container {
+  max-width: 1200px;
   margin: 0 auto;
+  padding-bottom: 3rem;
+}
+
+.main-card {
+  background: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 2rem;
+  margin-bottom: 2rem;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-bottom: 3px solid #f56600;
+  padding-bottom: 1.5rem;
+}
+
+.header h1 {
+  color: #f56600;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  color: #522d80;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.term-badge {
+  background: linear-gradient(135deg, #f56600 0%, #522d80 100%);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.section h3 {
+  font-size: 1.25rem;
+  color: #522d80;
+  margin-bottom: 0.5rem;
+}
+
+.helper-text {
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.section label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #522d80;
+  margin-bottom: 0.5rem;
+}
+
+.input-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.input-group input {
+  flex: 1;
+}
+
+.btn-primary {
+  background: #f56600;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-primary:hover {
+  background: #d45500;
+}
+
+.btn-secondary {
+  background: #522d80;
+  color: white;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-secondary:hover {
+  background: #3d2160;
+}
+
+.btn-generate {
+  width: 100%;
+  background: linear-gradient(135deg, #f56600 0%, #522d80 100%);
+  color: white;
+  padding: 1rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.btn-generate:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(245, 102, 0, 0.4);
+}
+
+.course-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.course-tag {
+  background: #f56600;
+  color: white;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 500;
+}
+
+.course-tag button {
+  background: none;
+  border: none;
+  color: white;
+  padding: 0.25rem;
+}
+
+.course-tag button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.linked-group {
+  background: #f5f3ff;
+  border: 2px solid #522d80;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.linked-group-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+}
+
+.linked-group-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #522d80;
+  font-weight: 500;
+}
+
+.linked-courses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.linked-course-tag {
+  background: white;
+  color: #522d80;
+  padding: 0.25rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  border: 1px solid #522d80;
+}
+
+.schedule-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+}
+
+.schedule-type {
+  background: white;
+  border: 2px solid #e5e7eb;
+  padding: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.schedule-type:hover {
+  border-color: #f56600;
+}
+
+.schedule-type.active {
+  border-color: #f56600;
+  background: #fff7ed;
+}
+
+.schedule-type .icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.schedule-type .label {
+  font-weight: 600;
+  color: #522d80;
+  margin-bottom: 0.25rem;
+  font-size: 0.9rem;
+}
+
+.schedule-type .desc {
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.schedule-card {
+  background: white;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border-top: 4px solid #f56600;
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.schedule-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.score-badge {
+  padding: 0.5rem 1rem;
+  font-weight: 700;
+}
+
+.score-high {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.score-medium {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.score-low {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.btn-export {
+  background: #522d80;
+  color: white;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-export:hover {
+  background: #3d2160;
+}
+
+.class-section {
+  border: 2px solid #e5e7eb;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  transition: all 0.2s;
+}
+
+.class-section:hover {
+  box-shadow: 0 4px 12px rgba(245, 102, 0, 0.2);
+  border-color: #f56600;
+}
+
+.class-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.class-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #522d80;
+}
+
+.crn-badge {
+  background: #f3f4f6;
+  color: #6b7280;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.class-name {
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.class-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #4b5563;
+}
+
+.ready-card {
+  background: linear-gradient(135deg, #fff7ed 0%, #f5f3ff 100%);
+  border: 3px solid #f56600;
   padding: 2rem;
   text-align: center;
-  width: 100%;
 }
 
-/* Enhanced Clemson paw print pattern background accent */
-#root::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  opacity: 0.04;
-  background-image: 
-    radial-gradient(circle at 15% 20%, var(--clemson-purple) 3px, transparent 3px),
-    radial-gradient(circle at 85% 80%, var(--clemson-orange) 3px, transparent 3px),
-    radial-gradient(circle at 35% 65%, var(--clemson-purple) 2px, transparent 2px),
-    radial-gradient(circle at 65% 35%, var(--clemson-orange) 2px, transparent 2px),
-    radial-gradient(circle at 50% 50%, var(--clemson-purple) 2.5px, transparent 2.5px);
-  background-size: 120px 120px;
-  pointer-events: none;
-  z-index: -1;
-  animation: float 20s ease-in-out infinite;
+.ready-card h3 {
+  color: #522d80;
+  margin-bottom: 0.5rem;
+  font-size: 1.5rem;
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px) translateX(0px);
-  }
-  50% {
-    transform: translateY(-20px) translateX(10px);
-  }
+.ready-card p {
+  color: #f56600;
+  font-weight: 600;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms, transform 300ms;
+.hidden {
+  display: none !important;
 }
 
-.logo:hover {
-  filter: drop-shadow(0 0 2em var(--clemson-orange)) drop-shadow(0 0 1em var(--clemson-purple));
-  transform: scale(1.1) rotate(5deg);
+#schedulesSection h2 {
+  font-size: 1.75rem;
+  color: white;
+  margin-bottom: 1.5rem;
+  text-align: center;
 }
 
-.card {
-  padding: 2em;
-  background: linear-gradient(135deg, var(--clemson-white) 0%, #FFF8F5 100%);
-  border-radius: 16px;
-  box-shadow: 
-    0 8px 24px rgba(82, 45, 128, 0.12), 
-    0 4px 8px rgba(246, 103, 51, 0.08);
-  border: 2px solid transparent;
-  border-image: linear-gradient(135deg, var(--clemson-orange) 0%, var(--clemson-purple) 100%);
-  border-image-slice: 1;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, 
-    transparent 0%,
-    rgba(246, 103, 51, 0.1) 50%,
-    transparent 100%);
-  transition: left 0.5s ease;
-}
-
-.card:hover::before {
-  left: 100%;
-}
-
-.card:hover {
-  box-shadow: 
-    0 12px 36px rgba(82, 45, 128, 0.18), 
-    0 6px 12px rgba(246, 103, 51, 0.12),
-    0 0 40px rgba(246, 103, 51, 0.1);
-  transform: translateY(-4px);
-  border-color: var(--clemson-orange);
-}
-
-.read-the-docs {
-  color: var(--clemson-gray-dark);
-  transition: color 0.3s ease;
-}
-
-.read-the-docs:hover {
-  color: var(--clemson-orange);
-}
-
-/* Clemson accent stripe with enhanced animation */
-.clemson-stripe {
-  height: 6px;
-  background: linear-gradient(90deg, 
-    var(--clemson-purple) 0%, 
-    var(--clemson-orange) 25%,
-    var(--clemson-purple) 50%,
-    var(--clemson-orange) 75%,
-    var(--clemson-purple) 100%);
-  background-size: 200% 100%;
-  margin: 1rem 0;
-  border-radius: 3px;
-  box-shadow: 0 2px 8px rgba(246, 103, 51, 0.3), 0 0 15px rgba(82, 45, 128, 0.2);
-  animation: gradient 4s ease infinite;
-}
-
-/* Tiger paw decorative element */
-.tiger-paw {
-  width: 50px;
-  height: 50px;
-  background: radial-gradient(circle at 30% 30%, var(--clemson-orange) 8px, transparent 8px),
-              radial-gradient(circle at 70% 30%, var(--clemson-orange) 6px, transparent 6px),
-              radial-gradient(circle at 30% 70%, var(--clemson-orange) 6px, transparent 6px),
-              radial-gradient(circle at 70% 70%, var(--clemson-orange) 6px, transparent 6px),
-              radial-gradient(circle at 50% 50%, var(--clemson-orange) 12px, transparent 12px);
-  opacity: 0.2;
-  transition: all 0.3s ease;
-}
-
-.tiger-paw:hover {
-  opacity: 0.6;
-  transform: scale(1.2) rotate(15deg);
-}
-
-/* Responsive adjustments */
 @media (max-width: 768px) {
-  #root {
-    padding: 1rem;
+  .main-card {
+    padding: 1.5rem;
   }
   
-  .card {
-    padding: 1.5em;
+  .header {
+    flex-direction: column;
+  }
+  
+  .header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .schedule-types {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .input-group {
+    flex-direction: column;
+  }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .schedule-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
