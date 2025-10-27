@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Plus, X, Calendar, Clock, Users, Download, CircleAlert } from 'lucide-react';
 
 const ScheduleBuilder = () => {
-  const [courses, setCourses] = useState([]);
   const [selectedCourses, setSelectedCourses] = useState([]);
   const [linkedGroups, setLinkedGroups] = useState([]);
   const [preference, setPreference] = useState('balanced');
