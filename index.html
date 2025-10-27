@@ -527,6 +527,7 @@
             </div>
             <div id="selectedCoursesSection" class="section hidden">
                 <h3>Selected Courses</h3>
+                <p class="helper-text" style="margin-bottom: 1rem;">💡 After adding courses, select a preferred professor for each class or leave as "Any Professor" to see all options</p>
                 <div id="selectedCoursesList" class="course-tags"></div>
             </div>
             <div class="section">
@@ -639,6 +640,7 @@
     let isRise = false;
     let currentDisplayCount = 20;
     const SCHEDULES_PER_LOAD = 10;
+    let professorPreferences = {}; // Maps courseCode -> preferred professor name (or null for any)
     
     const courseInput = document.getElementById('courseInput');
     const addCourseBtn = document.getElementById('addCourseBtn');
@@ -802,9 +804,57 @@
     function removeCourse(course) {
         selectedCourses = selectedCourses.filter(c => c !== course);
         linkedCourses = linkedCourses.filter(link => !link.courses.includes(course));
+        delete professorPreferences[course]; // Remove professor preference
         renderSelectedCourses();
         renderLinkedCourses();
         updateGenerateButton();
+        resetSchedules();
+    }
+    
+    function getTotalCreditHours() {
+        let totalCredits = 0;
+        for (const courseCode of selectedCourses) {
+            const parts = courseCode.split(' ');
+            const subject = parts[0];
+            const courseNumber = parts[1];
+            const section = allCoursesData.find(course =>
+                course.subject === subject &&
+                course.courseNumber === courseNumber
+            );
+            if (section) {
+                const credits = section.creditHourLow || section.creditHours || 0;
+                totalCredits += credits;
+            }
+        }
+        return totalCredits;
+    }
+    
+    function getProfessorsForCourse(courseCode) {
+        const parts = courseCode.split(' ');
+        const subject = parts[0];
+        const courseNumber = parts[1];
+        const sections = allCoursesData.filter(course =>
+            course.subject === subject &&
+            course.courseNumber === courseNumber &&
+            canEnrollInSection(course)
+        );
+        
+        const professorSet = new Set();
+        sections.forEach(section => {
+            if (section.faculty && section.faculty.length > 0) {
+                section.faculty.forEach(prof => {
+                    if (prof.displayName && prof.displayName.trim() !== '') {
+                        professorSet.add(prof.displayName);
+                    }
+                });
+            }
+        });
+        
+        return Array.from(professorSet).sort();
+    }
+    
+    function setProfessorPreference(courseCode, professorName) {
+        professorPreferences[courseCode] = professorName;
         resetSchedules();
     }
     
@@ -814,14 +864,49 @@
             return;
         }
         selectedCoursesSection.classList.remove('hidden');
-        selectedCoursesList.innerHTML = selectedCourses.map(course => `
-            <div class="course-tag">
-                <span>${course}</span>
-                <button onclick="removeCourse('${course}')">
-                    <i class="fas fa-times"></i>
-                </button>
+        
+        const totalCredits = getTotalCreditHours();
+        
+        selectedCoursesList.innerHTML = `
+            <div style="margin-bottom: 1rem; padding: 0.75rem; background: #f0f9ff; border-left: 4px solid #0ea5e9;">
+                <strong style="color: #0369a1;">Total Credit Hours: ${totalCredits}</strong>
             </div>
-        `).join('');
+            ${selectedCourses.map(course => {
+                const professors = getProfessorsForCourse(course);
+                const selectedProf = professorPreferences[course] || '';
+                const parts = course.split(' ');
+                const section = allCoursesData.find(c =>
+                    c.subject === parts[0] &&
+                    c.courseNumber === parts[1]
+                );
+                const credits = section ? (section.creditHourLow || section.creditHours || 0) : 0;
+                
+                return `
+                    <div class="course-tag" style="flex-direction: column; align-items: flex-start; padding: 0.75rem; min-width: 300px;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; margin-bottom: 0.5rem;">
+                            <span style="font-weight: 600;">${course} <span style="opacity: 0.8; font-size: 0.875rem;">(${credits} hrs)</span></span>
+                            <button onclick="removeCourse('${course}')" style="padding: 0.25rem 0.5rem;">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        ${professors.length > 0 ? `
+                            <div style="width: 100%; margin-top: 0.25rem;">
+                                <label style="font-size: 0.75rem; color: white; opacity: 0.9; margin-bottom: 0.25rem; display: block;">
+                                    <i class="fas fa-user"></i> Preferred Professor (optional):
+                                </label>
+                                <select onchange="setProfessorPreference('${course}', this.value)" 
+                                        style="width: 100%; padding: 0.4rem; font-size: 0.875rem; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.9);">
+                                    <option value="">Any Professor</option>
+                                    ${professors.map(prof => `
+                                        <option value="${prof}" ${selectedProf === prof ? 'selected' : ''}>${prof}</option>
+                                    `).join('')}
+                                </select>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('')}
+        `;
     }
     
     function addLinkedGroup() {
@@ -1206,14 +1291,29 @@
                 const parts = courseCode.split(' ');
                 const subject = parts[0];
                 const courseNumber = parts[1];
-                const sections = allCoursesData.filter(course =>
+                let sections = allCoursesData.filter(course =>
                     course.subject === subject &&
                     course.courseNumber === courseNumber &&
                     canEnrollInSection(course)
                 );
+                
+                // Filter by professor preference if specified
+                const preferredProf = professorPreferences[courseCode];
+                if (preferredProf) {
+                    const filteredSections = sections.filter(section => {
+                        if (section.faculty && section.faculty.length > 0) {
+                            return section.faculty.some(prof => prof.displayName === preferredProf);
+                        }
+                        return false;
+                    });
+                    if (filteredSections.length > 0) {
+                        sections = filteredSections;
+                    }
+                }
+                
                 if (sections.length === 0) {
                     await progressPromise;
-                    alert(`No available sections found for ${courseCode}. Check if you need Honors or RiSE access.`);
+                    alert(`No available sections found for ${courseCode}. Check if you need Honors or RiSE access, or try a different professor.`);
                     loadingOverlay.classList.add('hidden');
                     return;
                 }
