@@ -1,0 +1,91 @@
+/* Clemson University Theme Styles */
+
+/* Clemson color variables are in index.css */
+
+/* Enhanced card styling */
+.clemson-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(82, 45, 128, 0.1);
+  border: 1px solid var(--clemson-gray);
+  transition: box-shadow 0.3s ease;
+}
+
+.clemson-card:hover {
+  box-shadow: 0 6px 12px rgba(82, 45, 128, 0.15);
+}
+
+/* Clemson accent stripe */
+.clemson-stripe {
+  height: 4px;
+  background: linear-gradient(90deg, var(--clemson-purple) 0%, var(--clemson-orange) 100%);
+  margin: 0 0 1.5rem 0;
+  border-radius: 2px;
+}
+
+/* Clemson button variants */
+.btn-clemson-primary {
+  background: linear-gradient(135deg, var(--clemson-orange) 0%, var(--clemson-orange-dark) 100%);
+  color: var(--clemson-white);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(246, 103, 51, 0.3);
+}
+
+.btn-clemson-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(246, 103, 51, 0.4);
+}
+
+.btn-clemson-secondary {
+  background: linear-gradient(135deg, var(--clemson-purple) 0%, var(--clemson-purple-dark) 100%);
+  color: var(--clemson-white);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(82, 45, 128, 0.3);
+}
+
+.btn-clemson-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(82, 45, 128, 0.4);
+}
+
+/* Clemson badge */
+.clemson-badge {
+  background: linear-gradient(135deg, var(--clemson-orange-light) 0%, var(--clemson-orange) 100%);
+  color: var(--clemson-white);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  box-shadow: 0 2px 4px rgba(246, 103, 51, 0.2);
+}
+
+/* Clemson input focus */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--clemson-orange) !important;
+  box-shadow: 0 0 0 3px rgba(246, 103, 51, 0.1) !important;
+}
+
+/* Clemson link styles */
+a.clemson-link {
+  color: var(--clemson-orange);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.3s ease;
+}
+
+a.clemson-link:hover {
+  border-bottom-color: var(--clemson-orange);
+}
