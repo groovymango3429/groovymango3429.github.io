@@ -501,6 +501,18 @@
                 </span>
             </div>
             
+            <div style="background: linear-gradient(135deg, #fff7ed 0%, #f5f3ff 100%); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; border-left: 4px solid #f56600;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-star" style="color: #f56600;"></i>
+                    <strong style="color: #522d80; font-size: 1rem;">New Features:</strong>
+                </div>
+                <ul style="margin-left: 1.5rem; color: #4b5563; font-size: 0.875rem; line-height: 1.6;">
+                    <li><strong>Professor Selection:</strong> Choose your preferred professor for each class or leave as "Any Professor"</li>
+                    <li><strong>Credit Hour Tracking:</strong> See total credit hours for your selected courses and in each schedule</li>
+                    <li><strong>Smart Filtering:</strong> Schedules automatically filter to your professor preferences</li>
+                </ul>
+            </div>
+            
             <div class="section">
                 <label>Special Programs</label>
                 <p class="helper-text" style="margin-bottom: 0.5rem;">Select if you're part of these programs to access exclusive sections</p>
@@ -1618,12 +1630,33 @@
             const scoreToDisplay = schedule.displayScore || schedule.score;
             const scoreClass = scoreToDisplay >= 80 ? 'score-high' :
                               scoreToDisplay >= 60 ? 'score-medium' : 'score-low';
+            
+            // Calculate total credits for this schedule
+            let totalCredits = 0;
+            schedule.sections.forEach(section => {
+                const credits = section.creditHourLow || section.creditHours || 0;
+                totalCredits += credits;
+            });
+            
+            // Check if any professor preferences were applied
+            const appliedPreferences = [];
+            schedule.sections.forEach(section => {
+                const courseCode = `${section.subject} ${section.courseNumber}`;
+                if (professorPreferences[courseCode] && section.faculty && section.faculty.length > 0) {
+                    const profName = section.faculty[0].displayName;
+                    if (profName === professorPreferences[courseCode]) {
+                        appliedPreferences.push(`${courseCode}: ${profName}`);
+                    }
+                }
+            });
+            
             return `
                 <div class="schedule-card">
                     <div class="schedule-header">
                         <div class="schedule-info">
                             <div class="score-badge ${scoreClass}">Score: ${scoreToDisplay}%</div>
                             <span style="color: #6b7280;">Schedule Option ${schedule.id}</span>
+                            <span style="color: #0369a1; font-weight: 600; margin-left: 1rem;">📚 ${totalCredits} Credits</span>
                         </div>
                         <div style="display: flex; gap: 0.5rem;">
                             <button class="btn-toggle" id="toggle-${schedule.id}" onclick="toggleView(${schedule.id})">
@@ -1634,10 +1667,14 @@
                             </button>
                         </div>
                     </div>
+                    ${appliedPreferences.length > 0 ? `
+                        <div style="background: #f0f9ff; border-left: 4px solid #0ea5e9; padding: 0.75rem; margin-bottom: 1rem; font-size: 0.875rem;">
+                            <strong style="color: #0369a1;"><i class="fas fa-check-circle"></i> Professor Preferences Applied:</strong>
+                            <div style="margin-top: 0.25rem; color: #075985;">${appliedPreferences.join(' • ')}</div>
+                        </div>
+                    ` : ''}
                     
-                    <div id="calendar-${schedule.id}">
-                        ${renderCalendar(schedule.sections, schedule.id)}
-                    </div>
+                    <div id="calendar-${schedule.id}">${renderCalendar(schedule.sections, schedule.id)}</div>
                     
                     <div id="list-${schedule.id}" class="list-view">
                         ${schedule.sections.map(section => {
@@ -1693,14 +1730,23 @@
         }
         
         const scoreToDisplay = schedule.displayScore || schedule.score;
-        const text = `Clemson Schedule ${scheduleId} - Score: ${scoreToDisplay}%\nSpring 2026\n\n` +
+        
+        // Calculate total credits
+        let totalCredits = 0;
+        schedule.sections.forEach(section => {
+            const credits = section.creditHourLow || section.creditHours || 0;
+            totalCredits += credits;
+        });
+        
+        const text = `Clemson Schedule ${scheduleId} - Score: ${scoreToDisplay}%\nSpring 2026\nTotal Credits: ${totalCredits}\n\n` +
             schedule.sections.map(section => {
                 const meeting = section.meetingsFaculty && section.meetingsFaculty[0]?.meetingTime;
                 const faculty = section.faculty && section.faculty[0];
                 const badges = [];
                 if (hasAttribute(section, 'HONR')) badges.push('[HONORS]');
                 if (isRiseOnly(section)) badges.push('[RiSE]');
-                return `${section.subject} ${section.courseNumber}-${section.sequenceNumber} ${badges.join(' ')}\n${section.courseTitle}\n` +
+                const credits = section.creditHourLow || section.creditHours || 0;
+                return `${section.subject} ${section.courseNumber}-${section.sequenceNumber} (${credits} hrs) ${badges.join(' ')}\n${section.courseTitle}\n` +
                     `CRN: ${section.courseReferenceNumber}\n` +
                     (meeting ? `Time: ${getDaysString(meeting)} ${formatTime(meeting.beginTime)} - ${formatTime(meeting.endTime)}\n` +
                     `Location: ${meeting.building} ${meeting.room}\n` : 'Time: TBA\n') +
