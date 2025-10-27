@@ -6,8 +6,10 @@ Badges: ![Status](https://img.shields.io/badge/status-beta-yellow) ![License](ht
 
 ## Key Features
 
+- **Professor Selection**: Choose your preferred professor for each course or leave as "Any Professor" to see all options
+- **Credit Hour Tracking**: Automatic calculation and display of total credit hours for selected courses and schedules
 - Smart schedule generation that avoids time conflicts
-- Six schedule preference modes: Balanced, Early Bird, Night Owl, Compact, MWF Focus, T/R Focus
+- Nine schedule preference modes: Balanced, Early Bird, Night Owl, Compact, MWF Focus, T/R Focus, No Friday, Lunch Break, 3-Day Week
 - Linked courses: require matching section numbers (useful for labs/recitations)
 - Honors and RiSE program filtering for program-specific sections
 - Duplicate schedule deduplication (each unique combination appears once)
@@ -16,8 +18,9 @@ Badges: ![Status](https://img.shields.io/badge/status-beta-yellow) ![License](ht
   - total gaps (compactness)
   - day distribution (MWF vs TR)
   - seat availability (penalizes full sections)
+  - professor preferences
 - Calendar and List views for each generated schedule
-- Export schedules as plain text files (includes CRNs, times, instructors, locations)
+- Export schedules as plain text files (includes CRNs, times, instructors, locations, credit hours)
 
 ## Quick Start
 
@@ -39,10 +42,13 @@ Run locally:
 
 1. (Optional) Check "Honors" or "RiSE" if you are eligible to include those sections.
 2. Add course codes (e.g., `ENGR 1410`, `MATH 1060`) and click Add.
-3. (Optional) Create linked groups so selected courses share the same section number.
-4. Choose a schedule preference (Balanced / Early / Late / Compact / MWF / TR).
-5. Click "Generate Schedules". The app will produce up to the top-ranked schedule options.
-6. Toggle between calendar and list views, or export a schedule as a text file.
+3. (Optional) Select a preferred professor for each course from the dropdown, or leave as "Any Professor" to see all sections.
+4. (Optional) Create linked groups so selected courses share the same section number.
+5. Choose a schedule preference (Balanced / Early / Late / Compact / MWF / TR / No Friday / Lunch Break / 3-Day Week).
+6. Click "Generate Schedules". The app will produce up to the top-ranked schedule options.
+7. View total credit hours for your selected courses and in each schedule.
+8. Toggle between calendar and list views to see professor names, CRNs, and times.
+9. Export a schedule as a text file with all details included.
 
 ## Notes on Recent Fixes
 - Fixed a bug where changing schedule preference would only re-score existing schedules instead of fully regenerating them. Now changing preferences, special program toggles, adding/removing courses, or editing linked groups will clear previous results so schedules are regenerated correctly.
@@ -72,6 +78,25 @@ Please include reproducible steps if reporting bugs and example course JSON snip
 - "No available sections found" — ensure the JSON file contains that course and that Honors / RiSE toggles match the section attributes.
 - Calendar rendering issues — check meeting times in the JSON (expected `HHMM` strings like `0830`).
 - If schedules are missing, try increasing variety by adding more sections or removing overly restrictive linked groups.
+- If a professor preference filters out all sections, try selecting "Any Professor" or a different professor.
+
+## Future Enhancements
+
+### RateMyProfessor Integration
+The app currently supports professor selection based on available faculty in the course data. Future enhancements could include:
+
+- Integration with RateMyProfessor API (e.g., using [ratemyprofessor-api](https://github.com/tisuela/ratemyprof-api))
+- Display professor ratings, difficulty scores, and "would take again" percentages
+- Automatic scoring boost for highly-rated professors
+- Filter options based on professor ratings (e.g., only show professors with 4+ stars)
+- Pass/fail rate data if available from institutional sources
+
+**Note**: The current implementation uses professor data directly from the course catalog (`faculty.displayName` field). Since this is a client-side static site, direct integration with RateMyProfessor would require either:
+1. A backend proxy service to avoid CORS issues
+2. Pre-fetching and bundling rating data with the course JSON
+3. Using a CORS-enabled RMP API wrapper
+
+Contributions implementing this feature are welcome!
 
 ## License
 MIT — see LICENSE file.
